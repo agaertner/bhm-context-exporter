@@ -8,7 +8,7 @@
   "dependencies": {
     "bh.blishhud": ">=0.11.6"
   },
-  "url": "https://github.com/agaertner/Blish-HUD-Modules-Releases",
+  "url": "https://github.com/agaertner/bhm-context-exporter",
   "directories": [ "stream_out" ],
   "enabled_without_gw2": false,
   "contributors": [
