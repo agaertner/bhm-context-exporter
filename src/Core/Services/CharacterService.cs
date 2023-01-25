@@ -24,6 +24,7 @@ namespace Nekres.Stream_Out.Core.Services
 
         private const string CHARACTER_NAME = "character_name.txt";
         private const string PROFESSION_ICON = "profession_icon.png";
+        private const string PROFESSION_NAME = "profession_name.txt";
         private const string COMMANDER_ICON = "commander_icon.png";
         private const string DEATHS_WEEK = "deaths_week.txt";
         private const string DEATHS_DAY = "deaths_day.txt";
@@ -74,8 +75,27 @@ namespace Nekres.Stream_Out.Core.Services
             try
             {
                 var specialization = await Gw2ApiManager.Gw2ApiClient.V2.Specializations.GetAsync(e.Value);
-                var profession = await Gw2ApiManager.Gw2ApiClient.V2.Professions.GetAsync(Gw2Mumble.PlayerCharacter.Profession);
-                await TextureUtil.SaveToImage(specialization.Elite ? specialization.ProfessionIconBig : profession.IconBig, $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PROFESSION_ICON}");
+
+                Gw2Sharp.WebApi.RenderUrl? icon;
+                string name;
+
+                if (specialization.Elite) {
+
+                    icon = specialization.ProfessionIconBig;
+                    name = specialization.Name;
+
+                } else {
+
+                    var profession = await Gw2ApiManager.Gw2ApiClient.V2.Professions.GetAsync(Gw2Mumble.PlayerCharacter.Profession);
+
+                    icon = profession.IconBig;
+                    name = profession.Name;
+
+                }
+
+                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PROFESSION_NAME}", name ?? string.Empty);
+                await TextureUtil.SaveToImage(icon, $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PROFESSION_ICON}");
+
             }
             catch (UnexpectedStatusException)
             {

@@ -1,15 +1,17 @@
 {
   "name": "Stream Out",
-  "version": "0.7.7",
+  "version": "0.7.8",
   "namespace": "Nekres.Stream_Out",
   "package": "StreamOut.dll",
   "manifest_version": 1,
-  "description": "Exports player account information to image and text files which can be used in OBS and other streaming software.\nSome update in real-time because they reflect your character's current state while others update every 5 minutes as they reflect data from your overall account.",
+  "description": "Exports game and account information to image and text files which can be used in OBS and other streaming software.\nSome update in real-time because they reflect your game's current state (eg. active\ncharacter's name, specialisation) while others update every 5 minutes as they reflect non-sensitive data from your\noverall account (eg. wallet coins, PvP/WvW rank).\nLegendary Insights, Legendary Divinations and Unstable Fractal Essences are exported from your www.killproof.me profile. Complementary pre-cropped static icons are provided for your convenience.\nThe default output folder can be located with the dropdown menu of the cogwheel button in the top-right corner when viewing the module's settings.",
   "dependencies": {
-    "bh.blishhud": ">=0.11.6"
+    "bh.blishhud": ">=1.0.0"
   },
   "url": "https://github.com/agaertner/bhm-context-exporter",
-  "directories": [ "stream_out" ],
+  "directories": [
+    "stream_out"
+  ],
   "enabled_without_gw2": false,
   "contributors": [
     {
@@ -28,7 +30,7 @@
     },
     "progression": {
       "optional": true,
-      "details": "Needed to record your kill count in PvP and WvW."
+      "details": "Needed to record your kill count and rank in PvP and WvW."
     },
     "pvp": {
       "optional": true,
