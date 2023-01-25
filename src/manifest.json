@@ -1,46 +1,48 @@
 {
-    "name": "Stream Out",
-    "version": "0.7.7",
-    "namespace": "Nekres.Stream_Out",
-    "package": "StreamOut.dll",
-    "manifest_version": 1,
-    "description": "Exports game and account information to image and text files which can be used in OBS and other streaming software.\nSome update in real-time because they reflect your game's current state (eg. active\ncharacter's name, specialisation) while others update every 5 minutes as they reflect non-sensitive data from your\noverall account (eg. wallet coins, PvP/WvW rank).\nLegendary Insights, Legendary Divinations and Unstable Fractal Essences are exported from your www.killproof.me profile. Complementary pre-cropped static icons are provided for your convenience.\nThe default output folder can be located with the dropdown menu of the cogwheel button in the top-right corner of this window.",
-    "dependencies": {
-        "bh.blishhud": ">=1.0.0"
-    },
-    "url": "https://github.com/agaertner/bhm-context-exporter",
-    "directories": [ "stream_out" ],
-    "enabled_without_gw2": false,
-    "contributors": [
-        {
-            "name": "Nekres",
-            "username": "Nekres.1943"
-        }
-    ],
-    "api_permissions": {
-        "account": {
-            "optional": false,
-            "details": "Always required if any other permission is present."
-        },
-        "characters": {
-            "optional": true,
-            "details": "Needed to record your death count."
-        },
-        "progression": {
-            "optional": true,
-            "details": "Needed to record your kill count and rank in PvP and WvW."
-        },
-        "pvp": {
-            "optional": true,
-            "details": "Needed to request your SPvP standings."
-        },
-        "wallet": {
-            "optional": true,
-            "details": "Needed to record the amount of gold, silver and copper in your possession."
-        },
-        "guilds": {
-            "optional": true,
-            "details": "Needed to request image resources required to render your current represented guild's' emblem."
-        }
+  "name": "Stream Out",
+  "version": "0.1.8",
+  "namespace": "Nekres.Stream_Out",
+  "package": "StreamOut.dll",
+  "manifest_version": 1,
+  "description": "Exports game and account information to image and text files which can be used in OBS and other streaming software.\nSome update in real-time because they reflect your game's current state (eg. active\ncharacter's name, specialisation) while others update every 5 minutes as they reflect non-sensitive data from your\noverall account (eg. wallet coins, PvP/WvW rank).\nLegendary Insights, Legendary Divinations and Unstable Fractal Essences are exported from your www.killproof.me profile. Complementary pre-cropped static icons are provided for your convenience.\nThe default output folder can be located with the dropdown menu of the cogwheel button in the top-right corner of this window.",
+  "dependencies": {
+    "bh.blishhud": ">=1.0.0"
+  },
+  "url": "https://github.com/agaertner/bhm-context-exporter",
+  "directories": [
+    "stream_out"
+  ],
+  "enabled_without_gw2": false,
+  "contributors": [
+    {
+      "name": "Nekres",
+      "username": "Nekres.1943"
     }
+  ],
+  "api_permissions": {
+    "account": {
+      "optional": false,
+      "details": "Always required if any other permission is present."
+    },
+    "characters": {
+      "optional": true,
+      "details": "Needed to record your death count."
+    },
+    "progression": {
+      "optional": true,
+      "details": "Needed to record your kill count and rank in PvP and WvW."
+    },
+    "pvp": {
+      "optional": true,
+      "details": "Needed to request your SPvP standings."
+    },
+    "wallet": {
+      "optional": true,
+      "details": "Needed to record the amount of gold, silver and copper in your possession."
+    },
+    "guilds": {
+      "optional": true,
+      "details": "Needed to request image resources required to render your current represented guild's' emblem."
+    }
+  }
 }
