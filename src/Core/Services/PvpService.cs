@@ -108,9 +108,9 @@ namespace Nekres.Stream_Out.Core.Services
                         {
                             var nextTierRating = currentRank.Tiers[j].Rating;
 
-                            if (standing.Current.Rating > nextTierRating)
+                            if (standing.Current.Rating > nextTierRating) {
                                 continue;
-
+                            }
                             tier = j + 1;
                             rank = currentRank;
                             found = true;

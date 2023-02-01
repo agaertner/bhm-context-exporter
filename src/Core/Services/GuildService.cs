@@ -47,8 +47,9 @@ namespace Nekres.Stream_Out.Core.Services
 
             await Gw2ApiManager.Gw2ApiClient.V2.Guild[guildId].GetAsync().ContinueWith(async task =>
             {
-                if (task.IsFaulted)
+                if (task.IsFaulted) {
                     return;
+                }
                 var name = task.Result.Name;
                 var tag = task.Result.Tag;
                 var motd = task.Result.Motd ?? string.Empty;
@@ -68,10 +69,12 @@ namespace Nekres.Stream_Out.Core.Services
                 var fg = await Gw2ApiManager.Gw2ApiClient.V2.Emblem.Foregrounds.GetAsync(emblem.Foreground.Id);
 
                 var layersCombined = new List<Gw2Sharp.WebApi.RenderUrl>();
-                if (bg != null)
+                if (bg != null) {
                     layersCombined.AddRange(bg.Layers);
-                if (fg != null)
+                }
+                if (fg != null) {
                     layersCombined.AddRange(fg.Layers.Skip(1));
+                }
                 var layers = new List<Bitmap>();
                 foreach (var renderUrl in layersCombined)
                 {
@@ -92,9 +95,9 @@ namespace Nekres.Stream_Out.Core.Services
                 // See also: https://api.guildwars2.com/v2/colors?ids=1,2,3,4,4,3,2,1
                 // var colors = await Gw2ApiManager.Gw2ApiClient.V2.Colors.ManyAsync(colorsCombined);
                 var colors = new List<Gw2Sharp.WebApi.V2.Models.Color>();
-                foreach (var color in colorsCombined)
+                foreach (var color in colorsCombined) {
                     colors.Add(await Gw2ApiManager.Gw2ApiClient.V2.Colors.GetAsync(color));
-
+                }
                 var result = new Bitmap(256, 256);
                 for (var i = 0; i < layers.Count; i++)
                 {
