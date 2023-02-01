@@ -39,13 +39,18 @@ namespace Nekres.Stream_Out.Core.Services
         {
             await TaskUtil.GetJsonResponse<dynamic>($"{KILLPROOF_API_URL}{AccountName}?lang={GameService.Overlay.UserLocale.Value}").ContinueWith(async task =>
             {
-                if (task.IsFaulted || !task.Result.Item1) return;
+                if (task.IsFaulted || !task.Result.Item1) {
+                    return;
+                }
                 IEnumerable<dynamic> killProofs = task.Result.Item2.killproofs;
-                if (killProofs.IsNullOrEmpty()) return;
+                if (killProofs.IsNullOrEmpty()) {
+                    return;
+                }
 
                 var killproofDir = $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/killproof.me";
-                if (!Directory.Exists(killproofDir))
+                if (!Directory.Exists(killproofDir)) {
                     Directory.CreateDirectory(killproofDir);
+                }
 
                 var count = 0;
                 foreach (var killProof in killProofs)

@@ -230,7 +230,9 @@ namespace Nekres.Stream_Out
             ExportWvwInfo.SettingChanged -= ToggleService<WvwService>;
             ExportWalletInfo.SettingChanged -= ToggleService<WalletService>;
             Gw2ApiManager.SubtokenUpdated -= SubTokenUpdated;
-            foreach (var service in _allExportServices) service?.Dispose();
+            foreach (var service in _allExportServices) {
+                service?.Dispose();
+            }
             // All static members must be manually unset
             Instance = null;
         }

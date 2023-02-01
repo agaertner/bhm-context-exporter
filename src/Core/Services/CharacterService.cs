@@ -96,10 +96,10 @@ namespace Nekres.Stream_Out.Core.Services
                 await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PROFESSION_NAME}", name ?? string.Empty);
                 await TextureUtil.SaveToImage(icon, $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PROFESSION_ICON}");
 
-            }
-            catch (UnexpectedStatusException)
-            {
+            } catch (UnexpectedStatusException) {
                 StreamOutModule.Logger.Warn(StreamOutModule.Instance.WebApiDown);
+            } catch (RequestException ex) {
+                StreamOutModule.Logger.Error(ex, ex.Message);
             }
         }
 
