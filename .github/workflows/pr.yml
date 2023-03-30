@@ -24,7 +24,6 @@ jobs:
         outputs:
             namespace: ${{ steps.get_namespace.outputs.prop }}
             version: ${{ steps.get_version.outputs.prop }}
-            
         steps:
             - name: Install MSBuild Tools
               uses: microsoft/setup-msbuild@v1.1
@@ -93,8 +92,11 @@ jobs:
               id: get_artifact
               run: |
                 set -x
-                RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts")
+                RESPONSE=$(curl -s "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts")
                 ARTIFACT_URL=$(echo "$RESPONSE" | jq -r ".artifacts[] | select(.name == \"${{ needs.build.outputs.namespace }}_${{ needs.build.outputs.version }}+PR.${{ github.event.number }}\") | .archive_download_url")
+                if [ -z "$ARTIFACT_URL" ]; then
+                  ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                fi
                 echo "artifact_url=$ARTIFACT_URL" >> $env:GITHUB_ENV
               shell: bash
       
