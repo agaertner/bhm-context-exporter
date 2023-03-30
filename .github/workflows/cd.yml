@@ -8,8 +8,6 @@ on:
       - 'src/**/*'
       - 'submodules/**/*'
     types: [closed]
-    # Only run on merged PRs. Ignore tag pushes.
-    if: ${{ github.event.pull_request.merged && !startsWith(github.ref, 'refs/tags/') }}
     
 env:
   GITHUB_TOKEN: ${{ github.token }}
@@ -22,6 +20,8 @@ jobs:
     build-release:
         name: Build Release
         runs-on: windows-latest
+        # Only run on merged PRs. Ignore tag pushes.
+        if: ${{ github.event.pull_request.merged && !startsWith(github.ref, 'refs/tags/') }}
         steps:
             - name: Install MSBuild Tools
               uses: microsoft/setup-msbuild@v1.1
