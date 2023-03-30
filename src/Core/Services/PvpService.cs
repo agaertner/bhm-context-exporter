@@ -119,9 +119,8 @@ namespace Nekres.Stream_Out.Core.Services
                     }
 
                     await Task.Run(() => Gw2Util.GeneratePvpTierImage($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_TIER_ICON}", tier, rank.Tiers.Count));
-
                     await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_RANK}", $"{rank.Name} {tier.ToRomanNumeral()}");
-                    await TextureUtil.SaveToImage(rank.OverlaySmall, $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_RANK_ICON}");
+                    await TextureUtil.SaveToImage(rank.Overlay, $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_RANK_ICON}");
                 });
             });
         }
