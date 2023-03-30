@@ -79,6 +79,18 @@ jobs:
                   src/bin/Debug/*/**
                   !src/bin/Debug/${{ steps.get_csproj.outputs.name }}.bhm
                   
+            - name: Get artifact URL
+              id: get_artifact
+              run: |
+                run_id="${{ github.run_id }}"
+                token="${{ secrets.GITHUB_TOKEN }}"
+                artifact_name="${{ steps.get_namespace.outputs.prop }}_${{ steps.get_version.outputs.prop }}+PR.${{ github.event.number }}"
+                response=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id/artifacts")
+                artifact_id=$(echo "$response" | jq -r ".artifacts[] | select(.name == \"$artifact_name\") | .id")
+                artifact_url=$(echo "$response" | jq -r ".artifacts[] | select(.name == \"$artifact_name\") | .archive_download_url")
+                echo "artifact_url=$artifact_url" >> $env:GITHUB_ENV
+              shell: bash
+      
             - name: Attach BHM artifact to PR details
               # In public repositories this action does not work in
               # pull_request workflows when triggered by forks.
@@ -88,8 +100,8 @@ jobs:
               # We continue-on-error to give green light to fork PRs anyway.
               # The artifacts are still available in the action summary.
               uses: peter-evans/create-or-update-comment@v1
+              continue-on-error: true
               with:
-                continue-on-error: true
                 token: ${{ secrets.GITHUB_TOKEN }}
                 issue-number: ${{ github.event.number }}
                 reactions: rocket
@@ -97,5 +109,5 @@ jobs:
                   BHM artifact generated from changes of this pull request:
                   <details>
                   <summary>Click to expand</summary>
-                  ![BHM artifact](${{ steps.upload_bhm.outputs.artifact_url }})
+                  ![BHM artifact](${{ steps.get_artifact.outputs.artifact_url }})
                   </details>
