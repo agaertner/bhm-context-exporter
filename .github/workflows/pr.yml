@@ -2,12 +2,12 @@ name: Staging
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, synchronize]
     paths:
       - 'src/**/*'
       - 'submodules/**/*'
   pull_request_target:
-    types: [synchronize]
+    types: [opened, synchronize]
     paths:
       - 'src/**/*'
       - 'submodules/**/*'
@@ -76,8 +76,9 @@ jobs:
               with:
                 name: '${{ steps.get_namespace.outputs.prop }}_${{ steps.get_version.outputs.prop }}+PR.${{ github.event.number }}'
                 path: |
-                  src/bin/Debug/*/**
-                  !src/bin/Debug/${{ steps.get_csproj.outputs.name }}.bhm
+                   src/bin/Debug/**/*
+                  !src/bin/Debug/**/*/
+                  !src/bin/Debug/**/${{ steps.get_csproj.outputs.name }}.bhm
                   
             - name: Get artifact URL
               id: get_artifact
