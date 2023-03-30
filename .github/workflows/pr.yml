@@ -17,9 +17,14 @@ concurrency:
   cancel-in-progress: true
   
 jobs:
-    test-build:
+    build:
         name: Test Build Artifact
         runs-on: windows-latest
+        # Map a step output to a job output
+        outputs:
+            namespace: ${{ steps.get_namespace.outputs.prop }}
+            version: ${{ steps.get_version.outputs.prop }}
+            
         steps:
             - name: Install MSBuild Tools
               uses: microsoft/setup-msbuild@v1.1
@@ -82,14 +87,14 @@ jobs:
     reference-artifact:
         name: Reference BHM Artifact
         runs-on: windows-latest
-        needs: test-build
+        needs: build
         steps:
             - name: Get artifact URL
               id: get_artifact
               run: |
                 set -x
                 RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts")
-                ARTIFACT_URL=$(echo "$RESPONSE" | jq -r ".artifacts[] | select(.name == \"${{ jobs.test-build.outputs.get_namespace.outputs.prop }}_${{ jobs.test-build.outputs.get_version.outputs.prop }}+PR.${{ github.event.number }}\") | .archive_download_url")
+                ARTIFACT_URL=$(echo "$RESPONSE" | jq -r ".artifacts[] | select(.name == \"${{ needs.build.outputs.namespace }}_${{ needs.build.outputs.version }}+PR.${{ github.event.number }}\") | .archive_download_url")
                 echo "artifact_url=$ARTIFACT_URL" >> $env:GITHUB_ENV
               shell: bash
       
@@ -111,5 +116,5 @@ jobs:
                   BHM artifact generated from changes of this pull request:
                   <details>
                   <summary>Click to expand</summary>
-                  • [Download BHM artifact](${{ jobs.test-build.outputs.get_artifact.outputs.artifact_url }})
+                  • [Download BHM artifact](${{ steps.get_artifact.outputs.artifact_url }})
                   </details>
