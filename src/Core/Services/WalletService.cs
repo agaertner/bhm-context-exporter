@@ -31,12 +31,16 @@ namespace Nekres.Stream_Out.Core.Services
 
         private async Task UpdateWallet()
         {
-            if (!Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Wallet }))
+            if (!Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Wallet })) {
                 return;
+            }
 
             await Gw2ApiManager.Gw2ApiClient.V2.Account.Wallet.GetAsync().ContinueWith(async task =>
             {
-                if (task.IsFaulted) return;
+                if (task.IsFaulted) {
+                    return;
+                }
+
                 var coins = task.Result.First(x => x.Id == 1).Value; // Coins
                 await Gw2Util.GenerateCoinsImage($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WALLET_COINS}", coins);
 
