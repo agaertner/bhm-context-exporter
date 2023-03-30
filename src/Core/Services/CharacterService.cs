@@ -1,7 +1,7 @@
 ﻿using Blish_HUD;
+using Blish_HUD.Extended;
 using Blish_HUD.Modules.Managers;
 using Blish_HUD.Settings;
-using Gw2Sharp.WebApi.Exceptions;
 using Gw2Sharp.WebApi.V2.Models;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -9,8 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using static Blish_HUD.GameService;
-namespace Nekres.Stream_Out.Core.Services
-{
+namespace Nekres.Stream_Out.Core.Services {
     internal class CharacterService : ExportService
     {
         private static Gw2ApiManager Gw2ApiManager => StreamOutModule.Instance?.Gw2ApiManager;
@@ -72,35 +71,35 @@ namespace Nekres.Stream_Out.Core.Services
                 return;
             }
 
-            try
-            {
-                var specialization = await Gw2ApiManager.Gw2ApiClient.V2.Specializations.GetAsync(e.Value);
+            var specialization = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Specializations.GetAsync(e.Value)).Unwrap();
 
-                Gw2Sharp.WebApi.RenderUrl? icon;
-                string name;
+            if (specialization == null) {
+                return;
+            }
 
-                if (specialization.Elite) {
+            Gw2Sharp.WebApi.RenderUrl? icon;
+            string name;
 
-                    icon = specialization.ProfessionIconBig;
-                    name = specialization.Name;
+            if (specialization.Elite) {
 
-                } else {
+                icon = specialization.ProfessionIconBig;
+                name = specialization.Name;
 
-                    var profession = await Gw2ApiManager.Gw2ApiClient.V2.Professions.GetAsync(Gw2Mumble.PlayerCharacter.Profession);
+            } else {
 
-                    icon = profession.IconBig;
-                    name = profession.Name;
+                var profession = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Professions.GetAsync(Gw2Mumble.PlayerCharacter.Profession)).Unwrap();
 
+                if (profession == null) {
+                    return;
                 }
 
-                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PROFESSION_NAME}", name ?? string.Empty);
-                await TextureUtil.SaveToImage(icon, $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PROFESSION_ICON}");
+                icon = profession.IconBig;
+                name = profession.Name;
 
-            } catch (UnexpectedStatusException) {
-                StreamOutModule.Logger.Warn(StreamOutModule.Instance.WebApiDown);
-            } catch (RequestException ex) {
-                StreamOutModule.Logger.Error(ex, ex.Message);
             }
+
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PROFESSION_NAME}", name ?? string.Empty);
+            await TextureUtil.SaveToImage(icon, $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PROFESSION_ICON}");
         }
 
         private async void OnIsCommanderChanged(object o, ValueEventArgs<bool> e)

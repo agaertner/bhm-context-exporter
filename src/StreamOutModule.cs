@@ -13,8 +13,7 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Nekres.Stream_Out
-{
+namespace Nekres.Stream_Out {
     [Export(typeof(Module))]
     public class StreamOutModule : Module
     {
@@ -67,8 +66,6 @@ namespace Nekres.Stream_Out
 
         internal bool HasSubToken { get; private set; }
 
-        internal string WebApiDown = "Unable to connect to the official Guild Wars 2 WebApi. Check if the WebApi is down for maintenance.";
-
         internal enum UnicodeSigning
         {
             None,
@@ -87,7 +84,7 @@ namespace Nekres.Stream_Out
         protected override void DefineSettings(SettingCollection settings)
         {
             var general = settings.AddSubCollection("General", true, false);
-            OnlyLastDigitSettingEntry = general.DefineSetting("OnlyLastDigits",true, () => "Only Output Last Digits of Server Address", () => "Only outputs the last digits of the server address you are currently connected to.\nThis is the address shown when entering \"/ip\" in chat.");
+            OnlyLastDigitSettingEntry = general.DefineSetting("OnlyLastDigits", true, () => "Only Output Last Digits of Server Address", () => "Only outputs the last digits of the server address you are currently connected to.\nThis is the address shown when entering \"/ip\" in chat.");
             UseCatmanderTag = general.DefineSetting("CatmanderTag", false, () => "Use Catmander Tag", () => $"Replaces the Commander icon with the Catmander icon if you tag up as Commander in-game.");
             AddUnicodeSymbols = general.DefineSetting("UnicodeSymbols", UnicodeSigning.Suffixed, () => "Numeric Value Signing", () => "The way numeric values should be signed with unicode symbols.");
 
