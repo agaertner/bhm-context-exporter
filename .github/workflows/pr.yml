@@ -1,7 +1,13 @@
 name: Staging
 
-on: 
+on:
   pull_request:
+    types: [opened]
+    paths:
+      - 'src/**/*'
+      - 'submodules/**/*'
+  pull_request_target:
+    types: [synchronize]
     paths:
       - 'src/**/*'
       - 'submodules/**/*'
@@ -65,9 +71,31 @@ jobs:
               run: msbuild -p:Configuration=Debug -p:VERSIONED_BUILD=${{ steps.get_version.outputs.prop }}
                 
             - name: Upload BHM artifact
+              id: upload_bhm
               uses: actions/upload-artifact@v3.1.0
               with:
                 name: '${{ steps.get_namespace.outputs.prop }}_${{ steps.get_version.outputs.prop }}+PR.${{ github.event.number }}'
                 path: |
-                  src/bin/Debug/
+                  src/bin/Debug/*/**
                   !src/bin/Debug/${{ steps.get_csproj.outputs.name }}.bhm
+                  
+            - name: Attach BHM artifact to PR details
+              # In public repositories this action does not work in
+              # pull_request workflows when triggered by forks.
+              # Any attempt will be met with the error "Resource not
+              # accessible by integration". This is due to token
+              # restrictions put in place by GitHub Actions.
+              # We continue-on-error to give green light to fork PRs anyway.
+              # The artifacts are still available in the action summary.
+              uses: peter-evans/create-or-update-comment@v1
+              with:
+                continue-on-error: true
+                token: ${{ secrets.GITHUB_TOKEN }}
+                issue-number: ${{ github.event.number }}
+                reactions: rocket
+                body: |
+                  BHM artifact generated from changes of this pull request:
+                  <details>
+                  <summary>Click to expand</summary>
+                  ![BHM artifact](${{ steps.upload_bhm.outputs.artifact_url }})
+                  </details>
