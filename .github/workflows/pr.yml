@@ -77,7 +77,6 @@ jobs:
                 name: '${{ steps.get_namespace.outputs.prop }}_${{ steps.get_version.outputs.prop }}+PR.${{ github.event.number }}'
                 path: |
                   src/bin/Debug/**/*
-                  !src/bin/Debug/**/*/
                   !src/bin/Debug/**/${{ steps.get_csproj.outputs.name }}.bhm
                   
             - name: Get artifact URL
