@@ -78,17 +78,22 @@ jobs:
                 path: |
                   src/bin/Debug/**/*
                   !src/bin/Debug/**/${{ steps.get_csproj.outputs.name }}.bhm
-                  
+             
+    reference-artifact:
+        name: Reference BHM Artifact
+        runs-on: windows-latest
+        needs: test-build
+        steps:
             - name: Get artifact URL
               id: get_artifact
               run: |
                 set -x
                 RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts")
-                ARTIFACT_URL=$(echo "$RESPONSE" | jq -r ".artifacts[] | select(.name == \"${{ steps.get_namespace.outputs.prop }}_${{ steps.get_version.outputs.prop }}+PR.${{ github.event.number }}\") | .archive_download_url")
+                ARTIFACT_URL=$(echo "$RESPONSE" | jq -r ".artifacts[] | select(.name == \"${{ jobs.test-build.outputs.get_namespace.outputs.prop }}_${{ jobs.test-build.outputs.get_version.outputs.prop }}+PR.${{ github.event.number }}\") | .archive_download_url")
                 echo "artifact_url=$ARTIFACT_URL" >> $env:GITHUB_ENV
               shell: bash
       
-            - name: Attach BHM artifact to PR details
+            - name: Comment BHM artifact reference
               # In public repositories this action does not work in
               # pull_request workflows when triggered by forks.
               # Any attempt will be met with the error "Resource not
@@ -106,5 +111,5 @@ jobs:
                   BHM artifact generated from changes of this pull request:
                   <details>
                   <summary>Click to expand</summary>
-                  • [Download BHM artifact](${{ steps.get_artifact.outputs.artifact_url }})
+                  • [Download BHM artifact](${{ jobs.test-build.outputs.get_artifact.outputs.artifact_url }})
                   </details>
