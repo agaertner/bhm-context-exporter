@@ -118,5 +118,5 @@ jobs:
                   BHM artifact generated from changes of this pull request:
                   <details>
                   <summary>Click to expand</summary>
-                  • [Download BHM artifact](${{ steps.get_artifact.outputs.artifact_url }})
+                  &nbsp;&nbsp;&nbsp;&nbsp;**• [Download BHM artifact](${{ steps.get_artifact.outputs.artifact_url }})**
                   </details>
