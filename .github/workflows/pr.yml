@@ -108,7 +108,7 @@ jobs:
               # restrictions put in place by GitHub Actions.
               # We continue-on-error to give green light to fork PRs anyway.
               # The artifacts are still available in the action summary.
-              uses: peter-evans/create-or-update-comment@v1
+              uses: peter-evans/create-or-update-comment@v2.1.1
               continue-on-error: true
               with:
                 token: ${{ secrets.GITHUB_TOKEN }}
@@ -118,5 +118,6 @@ jobs:
                   BHM artifact generated from changes of this pull request:
                   <details>
                   <summary>Click to expand</summary>
+                  
                   &nbsp;&nbsp;&nbsp;&nbsp;**• [Download BHM artifact](${{ steps.get_artifact.outputs.artifact_url }})**
                   </details>
