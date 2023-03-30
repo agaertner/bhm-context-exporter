@@ -16,7 +16,10 @@ namespace Nekres.Stream_Out.Core.Services
         {
             await DoResetDaily().ContinueWith(async _ =>
             {
-                if (DateTime.UtcNow.Subtract(_prevApiRequestTime).TotalSeconds < 300) return;
+                if (DateTime.UtcNow.Subtract(_prevApiRequestTime).TotalSeconds < 300) {
+                    return;
+                }
+
                 _prevApiRequestTime = DateTime.UtcNow;
                 await this.Update();
             });
@@ -24,7 +27,10 @@ namespace Nekres.Stream_Out.Core.Services
 
         private async Task DoResetDaily()
         {
-            if (DateTime.UtcNow < StreamOutModule.Instance.ResetTimeDaily.Value) return;
+            if (DateTime.UtcNow < StreamOutModule.Instance.ResetTimeDaily.Value) {
+                return;
+            }
+
             StreamOutModule.Instance.ResetTimeDaily.Value = Gw2Util.GetDailyResetTime();
             await this.ResetDaily();
         }
