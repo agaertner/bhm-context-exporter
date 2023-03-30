@@ -82,13 +82,9 @@ jobs:
             - name: Get artifact URL
               id: get_artifact
               run: |
-                run_id="${{ github.run_id }}"
-                token="${{ secrets.GITHUB_TOKEN }}"
-                artifact_name="${{ steps.get_namespace.outputs.prop }}_${{ steps.get_version.outputs.prop }}+PR.${{ github.event.number }}"
-                response=$(curl -s -H "Authorization: Bearer $token" "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id/artifacts")
-                artifact_id=$(echo "$response" | jq -r ".artifacts[] | select(.name == \"$artifact_name\") | .id")
-                artifact_url=$(echo "$response" | jq -r ".artifacts[] | select(.name == \"$artifact_name\") | .archive_download_url")
-                echo "artifact_url=$artifact_url" >> $env:GITHUB_ENV
+                RESPONSE=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts")
+                ARTIFACT_URL=$(echo "$RESPONSE" | jq -r ".artifacts[] | select(.name == \"${{ steps.get_namespace.outputs.prop }}_${{ steps.get_version.outputs.prop }}+PR.${{ github.event.number }}\") | .archive_download_url")
+                echo "artifact_url=$ARTIFACT_URL" >> $env:GITHUB_ENV
               shell: bash
       
             - name: Attach BHM artifact to PR details
@@ -109,5 +105,5 @@ jobs:
                   BHM artifact generated from changes of this pull request:
                   <details>
                   <summary>Click to expand</summary>
-                  ![BHM artifact](${{ steps.get_artifact.outputs.artifact_url }})
+                  [Download BHM artifact](${{ steps.get_artifact.outputs.artifact_url }})
                   </details>
