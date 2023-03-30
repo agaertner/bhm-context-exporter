@@ -73,14 +73,27 @@ jobs:
               working-directory: ./src
               shell: pwsh
               run: msbuild -p:Configuration=Debug -p:VERSIONED_BUILD=${{ steps.get_version.outputs.prop }}
-                
+              
+            - name: Find output directory
+              id: get_output_dir
+              shell: pwsh
+              run: |
+                $root_dir = "./bin/Debug"
+                $bhm_files = Get-ChildItem -Path $root_dir -Filter *.bhm -Recurse
+                if ($bhm_files.Count -eq 0) {
+                    Write-Error "No .bhm files found under $root_dir."
+                    exit 1
+                }
+                $bhm_dir = Split-Path -Parent $bhm_files[0].FullName
+                echo "path=$bhm_dir" >> $env:GITHUB_OUTPUT
+        
             - name: Upload BHM artifact
               id: upload_bhm
               uses: actions/upload-artifact@v3.1.0
               with:
                 name: '${{ steps.get_namespace.outputs.prop }}_${{ steps.get_version.outputs.prop }}+PR.${{ github.event.number }}'
                 path: |
-                  src/bin/Debug/**/*
+                  ${{ steps.get_output_dir.outputs.path }}
                   !src/bin/Debug/**/${{ steps.get_csproj.outputs.name }}.bhm
              
     reference-artifact:
