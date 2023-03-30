@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Blish_HUD.Extended;
 
 namespace Nekres.Stream_Out.Core.Services
 {
@@ -42,37 +43,51 @@ namespace Nekres.Stream_Out.Core.Services
 
         private async Task UpdateRankForWvw()
         {
-            if (!Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Progression }))
+            if (!Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Progression })) {
                 return;
+            }
 
-            await Gw2ApiManager.Gw2ApiClient.V2.Account.GetAsync().ContinueWith(async response =>
-            {
-                if (response.IsFaulted) return;
-                var wvwRank = response.Result.WvwRank;
-                if (!wvwRank.HasValue || wvwRank <= 0) return;
-                await Gw2ApiManager.Gw2ApiClient.V2.Wvw.Ranks.AllAsync().ContinueWith(async t =>
-                {
-                    if (t.IsFaulted) return;
-                    var wvwRankObj = t.Result.MaxBy(y => wvwRank >= y.MinRank);
-                    await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_RANK}", $"{wvwRank:N0} : {wvwRankObj.Title}");
-                });
-            });
+            var account = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.GetAsync()).Unwrap();
+
+            if (account == null) {
+                return;
+            }
+
+            var wvwRankNum = account.WvwRank;
+            if (!wvwRankNum.HasValue || wvwRankNum <= 0) {
+                return;
+            }
+
+            var wvwRanks    = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Wvw.Ranks.AllAsync()).Unwrap();
+            if (wvwRanks == null) {
+                return;
+            }
+
+            var wvwRankObj = wvwRanks.MaxBy(y => wvwRankNum >= y.MinRank);
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_RANK}", $"{wvwRankNum:N0} : {wvwRankObj.Title}");
         }
 
         private async Task<int> RequestTotalKillsForWvW()
         {
-            if (!Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Progression }))
+            if (!Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Progression })) {
                 return -1;
-            return await Gw2ApiManager.Gw2ApiClient.V2.Account.Achievements.GetAsync().ContinueWith(response =>
-            {
-                if (response.IsFaulted) return -1;
-                return response.Result.Single(x => x.Id == 283).Current; // Realm Avenger
-            });
+            }
+
+            var achievements = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.Achievements.GetAsync()).Unwrap();
+
+            if (achievements == null) {
+                return -1;
+            }
+
+            var realmAvenger = achievements.FirstOrDefault(x => x.Id == 283); // Realm Avenger
+            return realmAvenger?.Current ?? -1;
         }
 
         private async Task ResetWorldVersusWorld(int worldId, bool force = false)
         {
-            if (!force && DateTime.UtcNow < ResetTimeWvW.Value) return;
+            if (!force && DateTime.UtcNow < ResetTimeWvW.Value) {
+                return;
+            }
 
             ResetTimeWvW.Value = await GetWvWResetTime(worldId);
             SessionKillsWvW.Value = 0;
@@ -83,7 +98,8 @@ namespace Nekres.Stream_Out.Core.Services
 
         private async Task<DateTime> GetWvWResetTime(int worldId)
         {
-            return await Gw2ApiManager.Gw2ApiClient.V2.Wvw.Matches.World(worldId).GetAsync().ContinueWith(r => r.IsFaulted ? DateTime.UtcNow : r.Result.EndTime.UtcDateTime);
+            var wvwWorldMatch = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Wvw.Matches.World(worldId).GetAsync()).Unwrap();
+            return wvwWorldMatch == null ? DateTime.UtcNow : wvwWorldMatch.EndTime.UtcDateTime;
         }
 
         protected override async Task ResetDaily()
@@ -93,36 +109,37 @@ namespace Nekres.Stream_Out.Core.Services
 
         protected override async Task Update()
         {
-            if (!Gw2ApiManager.HasPermission(TokenPermission.Account))
+            if (!Gw2ApiManager.HasPermission(TokenPermission.Account)) {
                 return;
+            }
 
             await UpdateRankForWvw();
 
-            await Gw2ApiManager.Gw2ApiClient.V2.Account.GetAsync().ContinueWith(async response =>
+            var account = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.GetAsync()).Unwrap();
+
+            if (account == null) {
+                return;
+            }
+
+            var isNewAcc = !account.Id.Equals(AccountGuid.Value);
+            AccountName.Value = account.Name;
+            AccountGuid.Value = account.Id;
+            await ResetWorldVersusWorld(account.World, isNewAcc);
+
+            var prefixKills = UnicodeSigning == StreamOutModule.UnicodeSigning.Prefixed ? SWORDS : string.Empty;
+            var suffixKills = UnicodeSigning == StreamOutModule.UnicodeSigning.Suffixed ? SWORDS : string.Empty;
+
+            // WvW kills
+            var totalKillsWvW = await RequestTotalKillsForWvW();
+            if (totalKillsWvW >= 0)
             {
-                if (response.IsFaulted) return;
-
-                var isNewAcc = !response.Result.Id.Equals(AccountGuid.Value);
-                AccountName.Value = response.Result.Name;
-                AccountGuid.Value = response.Result.Id;
-                await ResetWorldVersusWorld(response.Result.World, isNewAcc).ContinueWith(async _ =>
-                {
-                    var prefixKills = UnicodeSigning == StreamOutModule.UnicodeSigning.Prefixed ? SWORDS : string.Empty;
-                    var suffixKills = UnicodeSigning == StreamOutModule.UnicodeSigning.Suffixed ? SWORDS : string.Empty;
-
-                    // WvW kills
-                    var totalKillsWvW = await RequestTotalKillsForWvW();
-                    if (totalKillsWvW >= 0)
-                    {
-                        var currentKills = totalKillsWvW - TotalKillsAtResetWvW.Value;
-                        SessionKillsWvW.Value = currentKills;
-                        SessionKillsWvwDaily.Value = currentKills;
-                        await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_WEEK}", $"{prefixKills}{SessionKillsWvW.Value}{suffixKills}");
-                        await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_TOTAL}", $"{prefixKills}{totalKillsWvW}{suffixKills}");
-                        await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_DAY}", $"{prefixKills}{SessionKillsWvwDaily.Value}{suffixKills}");
-                    }
-                });
-            });
+                var currentKills = totalKillsWvW - TotalKillsAtResetWvW.Value;
+                SessionKillsWvW.Value = currentKills;
+                SessionKillsWvwDaily.Value = currentKills;
+                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_WEEK}", $"{prefixKills}{SessionKillsWvW.Value}{suffixKills}");
+                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_TOTAL}", $"{prefixKills}{totalKillsWvW}{suffixKills}");
+                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_DAY}", $"{prefixKills}{SessionKillsWvwDaily.Value}{suffixKills}");
+            }
         }
 
         public override async Task Clear()

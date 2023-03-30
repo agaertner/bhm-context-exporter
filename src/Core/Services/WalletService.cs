@@ -3,6 +3,7 @@ using Gw2Sharp.WebApi.V2.Models;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Blish_HUD.Extended;
 
 namespace Nekres.Stream_Out.Core.Services
 {
@@ -35,18 +36,17 @@ namespace Nekres.Stream_Out.Core.Services
                 return;
             }
 
-            await Gw2ApiManager.Gw2ApiClient.V2.Account.Wallet.GetAsync().ContinueWith(async task =>
-            {
-                if (task.IsFaulted) {
-                    return;
-                }
+            var wallet = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.Wallet.GetAsync()).Unwrap();
 
-                var coins = task.Result.First(x => x.Id == 1).Value; // Coins
-                await Gw2Util.GenerateCoinsImage($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WALLET_COINS}", coins);
+            if (wallet == null) {
+                return;
+            }
 
-                var karma = task.Result.First(x => x.Id == 2).Value; // Karma
-                await Gw2Util.GenerateKarmaImage($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WALLET_KARMA}", karma);
-            });
+            var coins = wallet.FirstOrDefault(x => x.Id == 1)?.Value ?? 0; // Coins
+            await Gw2Util.GenerateCoinsImage($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WALLET_COINS}", coins);
+
+            var karma = wallet.FirstOrDefault(x => x.Id == 2)?.Value ?? 0; // Karma
+            await Gw2Util.GenerateKarmaImage($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WALLET_KARMA}", karma);
         }
 
         public override async Task Clear()

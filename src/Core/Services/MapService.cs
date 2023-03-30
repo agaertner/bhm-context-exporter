@@ -25,10 +25,8 @@ namespace Nekres.Stream_Out.Core.Services {
             OnMapChanged(null, new ValueEventArgs<int>(Gw2Mumble.CurrentMap.Id));
         }
 
-        private async Task<IEnumerable<ContinentFloorRegionMapSector>> RequestSectors(int continentId, int floor, int regionId, int mapId)
-        {
-            return await Gw2ApiManager.Gw2ApiClient.V2.Continents[continentId].Floors[floor].Regions[regionId].Maps[mapId].Sectors.AllAsync()
-                .ContinueWith(task => task.IsFaulted ? Enumerable.Empty<ContinentFloorRegionMapSector>() : task.Result);
+        private async Task<IEnumerable<ContinentFloorRegionMapSector>> RequestSectors(int continentId, int floor, int regionId, int mapId) {
+            return await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Continents[continentId].Floors[floor].Regions[regionId].Maps[mapId].Sectors.AllAsync()).Unwrap();
         }
 
         private async void OnMapChanged(object o, ValueEventArgs<int> e)

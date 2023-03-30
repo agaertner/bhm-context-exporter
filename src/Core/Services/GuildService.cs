@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Blish_HUD.Extended;
+using Color = System.Drawing.Color;
 using static Blish_HUD.GameService;
 
 namespace Nekres.Stream_Out.Core.Services
@@ -31,10 +33,12 @@ namespace Nekres.Stream_Out.Core.Services
 
         private async Task UpdateGuild()
         {
-            if (!Gw2Mumble.IsAvailable || !Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Characters, TokenPermission.Guilds }))
+            if (!Gw2Mumble.IsAvailable || !Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Characters, TokenPermission.Guilds })) {
                 return;
+            }
 
-            var guildId = await Gw2ApiManager.Gw2ApiClient.V2.Characters[Gw2Mumble.PlayerCharacter.Name].Core.GetAsync().ContinueWith(task => task.IsFaulted ? Guid.Empty : task.Result.Guild);
+            var charCore = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Characters[Gw2Mumble.PlayerCharacter.Name].Core.GetAsync()).Unwrap();
+            var guildId  = charCore?.Guild ?? Guid.Empty;
 
             if (guildId.Equals(Guid.Empty))
             {
@@ -65,8 +69,8 @@ namespace Nekres.Stream_Out.Core.Services
                     return;
                 }
 
-                var bg = await Gw2ApiManager.Gw2ApiClient.V2.Emblem.Backgrounds.GetAsync(emblem.Background.Id);
-                var fg = await Gw2ApiManager.Gw2ApiClient.V2.Emblem.Foregrounds.GetAsync(emblem.Foreground.Id);
+                var bg = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Emblem.Backgrounds.GetAsync(emblem.Background.Id)).Unwrap();
+                var fg = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Emblem.Foregrounds.GetAsync(emblem.Foreground.Id)).Unwrap();
 
                 var layersCombined = new List<Gw2Sharp.WebApi.RenderUrl>();
                 if (bg != null) {
@@ -94,27 +98,28 @@ namespace Nekres.Stream_Out.Core.Services
                 // A bulk request would be more efficient but ArenaNet disposes duplicate ids which ruins matching it against layer indices.
                 // See also: https://api.guildwars2.com/v2/colors?ids=1,2,3,4,4,3,2,1
                 // var colors = await Gw2ApiManager.Gw2ApiClient.V2.Colors.ManyAsync(colorsCombined);
-                var colors = new List<Gw2Sharp.WebApi.V2.Models.Color>();
-                foreach (var color in colorsCombined) {
-                    colors.Add(await Gw2ApiManager.Gw2ApiClient.V2.Colors.GetAsync(color));
+                var colors = new List<Color>();
+                foreach (var colorId in colorsCombined) {
+                    var color = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Colors.GetAsync(colorId)).Unwrap();
+                    if (color == null) {
+                        return;
+                    }
+                    colors.Add(Color.FromArgb(color.Cloth.Rgb[0], color.Cloth.Rgb[1], color.Cloth.Rgb[2]));
                 }
                 var result = new Bitmap(256, 256);
                 for (var i = 0; i < layers.Count; i++)
                 {
                     var layer = layers[i].FitTo(result);
 
-                    if (colors.Any())
-                    {
-                        var color = System.Drawing.Color.FromArgb(colors[i].Cloth.Rgb[0], colors[i].Cloth.Rgb[1], colors[i].Cloth.Rgb[2]);
-                        // apply colors
-                        layer.Colorize(color);
-                    }
-
+                    // apply colors
+                    layer.Colorize(colors[i]);
+                    
                     // apply flags
-                    if (bg != null && i < bg.Layers.Count)
+                    if (bg != null && i < bg.Layers.Count) {
                         layer.Flip(emblem.Flags.Any(x => x == GuildEmblemFlag.FlipBackgroundHorizontal), emblem.Flags.Any(x => x == GuildEmblemFlag.FlipBackgroundVertical));
-                    else
+                    } else {
                         layer.Flip(emblem.Flags.Any(x => x == GuildEmblemFlag.FlipForegroundHorizontal), emblem.Flags.Any(x => x == GuildEmblemFlag.FlipForegroundVertical));
+                    }
 
                     // merge layer with result
                     var merged = result.Merge(layer);
