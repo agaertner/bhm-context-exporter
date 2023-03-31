@@ -27,12 +27,14 @@ namespace Nekres.Stream_Out.Core.Services {
         private const string COMMANDER_ICON  = "commander_icon.png";
         private const string DEATHS_WEEK     = "deaths_week.txt";
         private const string DEATHS_DAY      = "deaths_day.txt";
-        private const string IN_COMBAT          = "in_combat.txt";
+        private const string COMBAT_ICON     = "combat_icon.png";
+        private const string COMBAT_TEXT     = "combat.txt";
         private const string SKULL           = "\u2620"; // ☠
         private const string SWORDS          = "\u2694"; // ⚔
 
-        private       Bitmap _commanderIcon;
-        private       Bitmap _catmanderIcon;
+        private Bitmap _commanderIcon;
+        private Bitmap _catmanderIcon;
+        private Bitmap _battleIcon;
 
         private SettingEntry<bool> UseCatmanderTag => StreamOutModule.Instance.UseCatmanderTag;
 
@@ -52,18 +54,23 @@ namespace Nekres.Stream_Out.Core.Services {
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_WEEK}", $"0{SKULL}", false);
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_DAY}", $"0{SKULL}", false);
 
-            var moduleDir = DirectoriesManager.GetFullDirectoryPath("stream_out");
-            ContentsManager.ExtractIcons(UseCatmanderTag.Value ? "catmander_tag_white.png" : "commander_tag_white.png", Path.Combine(moduleDir, COMMANDER_ICON));
-            
-            if (Gw2Mumble.PlayerCharacter.IsCommander) {
-                return;
-            }
+            using var catmanderIconStream = ContentsManager.GetFileStream("catmander_tag_white.png");
+            _catmanderIcon = new Bitmap(catmanderIconStream);
 
-            await TextureUtil.ClearImage($"{moduleDir}/{COMMANDER_ICON}");
+            using var commanderIconStream = ContentsManager.GetFileStream("commander_tag_white.png");
+            _commanderIcon = new Bitmap(commanderIconStream);
+
+            using var battleIconStream = ContentsManager.GetFileStream("240678.png");
+            _battleIcon = new Bitmap(battleIconStream);
         }
 
         private async void OnIsInCombatChanged(object o, ValueEventArgs<bool> e) {
-            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{IN_COMBAT}", e.Value ? SWORDS : string.Empty);
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{COMBAT_TEXT}", e.Value ? SWORDS : string.Empty);
+            if (!e.Value) {
+                await TextureUtil.ClearImage($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{COMBAT_ICON}");
+                return;
+            }
+            await _battleIcon.SaveOnNetworkShare($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{COMBAT_ICON}", ImageFormat.Png);
         }
 
         private async void OnNameChanged(object o, ValueEventArgs<string> e)
@@ -120,27 +127,9 @@ namespace Nekres.Stream_Out.Core.Services {
             await SaveCommanderIcon(UseCatmanderTag.Value);
         }
 
-        private async Task SaveCommanderIcon(bool useCatmanderIcon)
-        {
-            if (useCatmanderIcon)
-            {
-                if (_catmanderIcon == null)
-                {
-                    using var catmanderIconStream = ContentsManager.GetFileStream("catmander_tag_white.png");
-                    _catmanderIcon = new Bitmap(catmanderIconStream);
-                    await catmanderIconStream.FlushAsync();
-                }
-                await _catmanderIcon.SaveOnNetworkShare($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{COMMANDER_ICON}", ImageFormat.Png);
-                return;
-            }
-
-            if (_commanderIcon == null)
-            {
-                using var commanderIconStream = ContentsManager.GetFileStream("commander_tag_white.png");
-                _commanderIcon = new Bitmap(commanderIconStream);
-                await commanderIconStream.FlushAsync();
-            }
-            await _commanderIcon.SaveOnNetworkShare($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{COMMANDER_ICON}", ImageFormat.Png);
+        private async Task SaveCommanderIcon(bool useCatmanderIcon) {
+            var icon = useCatmanderIcon ? _catmanderIcon : _commanderIcon;
+            await icon.SaveOnNetworkShare($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{COMMANDER_ICON}", ImageFormat.Png);
         }
 
         private async void OnUseCatmanderTagSettingChanged(object o, ValueChangedEventArgs<bool> e)
@@ -148,7 +137,6 @@ namespace Nekres.Stream_Out.Core.Services {
             if (!Gw2Mumble.PlayerCharacter.IsCommander) {
                 return;
             }
-
             await SaveCommanderIcon(e.NewValue);
         }
 
@@ -197,6 +185,7 @@ namespace Nekres.Stream_Out.Core.Services {
         {
             _commanderIcon?.Dispose();
             _catmanderIcon?.Dispose();
+            _battleIcon?.Dispose();
             Gw2Mumble.PlayerCharacter.NameChanged           -= OnNameChanged;
             Gw2Mumble.PlayerCharacter.SpecializationChanged -= OnSpecializationChanged;
             UseCatmanderTag.SettingChanged                  -= OnUseCatmanderTagSettingChanged;
