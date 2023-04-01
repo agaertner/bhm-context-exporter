@@ -78,8 +78,14 @@ namespace Nekres.Stream_Out.Core.Services {
             return realmAvenger?.Current ?? -1;
         }
 
-        private async Task<bool> ResetWorldVersusWorld() {
+        private async Task<bool> ResetWvWMatch(int worldId) {
             if (_lastResetTimeWvW.Value < _nextResetTimeWvW.Value && DateTime.UtcNow > _nextResetTimeWvW.Value) {
+                var wvwWorldMatch = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Wvw.Matches.World(worldId).GetAsync()).Unwrap();
+
+                if (wvwWorldMatch == null) {
+                    return false;
+                }
+                
                 var totalKills = await RequestTotalKillsForWvW();
 
                 if (totalKills < 0) {
@@ -89,19 +95,8 @@ namespace Nekres.Stream_Out.Core.Services {
                 _killsAtResetDaily.Value = totalKills;
                 _killsAtResetMatch.Value = totalKills;
                 _lastResetTimeWvW.Value  = DateTime.UtcNow;
+                _nextResetTimeWvW.Value  = wvwWorldMatch.EndTime.UtcDateTime.AddMinutes(5);
             }
-            return true;
-        }
-
-        private async Task<bool> GetWvWResetTime(int worldId)
-        {
-            var wvwWorldMatch = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Wvw.Matches.World(worldId).GetAsync()).Unwrap();
-
-            if (wvwWorldMatch == null) {
-                return false;
-            }
-
-            _nextResetTimeWvW.Value = wvwWorldMatch.EndTime.UtcDateTime.AddMinutes(5);
             return true;
         }
 
@@ -124,11 +119,7 @@ namespace Nekres.Stream_Out.Core.Services {
 
             await UpdateRankForWvw(account);
 
-            if (!await GetWvWResetTime(account.World)) {
-                return;
-            }
-
-            if (!await ResetWorldVersusWorld()) {
+            if (!await ResetWvWMatch(account.World)) {
                 return;
             }
 
