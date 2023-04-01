@@ -25,11 +25,9 @@ namespace Nekres.Stream_Out.Core.Services {
 
         private const string SWORDS = "\u2694"; // ⚔
 
-        private SettingEntry<int> _killsDaily;
         private SettingEntry<int> _killsAtResetDaily;
 
         public PvpService(SettingCollection settings) : base(settings) {
-            _killsDaily        = settings.DefineSetting($"{this.GetType().Name}_kills_daily",       0);
             _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", 0);
         }
 
@@ -167,7 +165,6 @@ namespace Nekres.Stream_Out.Core.Services {
             if (totalKills < 0) {
                 return false;
             }
-            _killsDaily.Value        = 0;
             _killsAtResetDaily.Value = totalKills;
             return true;
         }
@@ -186,8 +183,8 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            _killsDaily.Value = totalKills - _killsAtResetDaily.Value;
-            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_DAY}", $"{prefixKills}{_killsDaily.Value}{suffixKills}");
+            var killsDaily = totalKills - _killsAtResetDaily.Value;
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_DAY}", $"{prefixKills}{killsDaily}{suffixKills}");
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_TOTAL}", $"{prefixKills}{totalKills}{suffixKills}");
             
         }

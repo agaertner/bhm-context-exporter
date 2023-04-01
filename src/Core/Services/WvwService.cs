@@ -18,9 +18,7 @@ namespace Nekres.Stream_Out.Core.Services {
         private SettingEntry<DateTime> _lastResetTimeWvW;
         private SettingEntry<int>      _killsAtResetDaily;
         private SettingEntry<int>      _killsAtResetMatch;
-        private SettingEntry<int>      _killsMatch;
-        private SettingEntry<int>      _killsDaily;
-        
+
         private const string WVW_KILLS_WEEK  = "wvw_kills_week.txt";
         private const string WVW_KILLS_DAY   = "wvw_kills_day.txt";
         private const string WVW_KILLS_TOTAL = "wvw_kills_total.txt";
@@ -34,8 +32,6 @@ namespace Nekres.Stream_Out.Core.Services {
             _lastResetTimeWvW  = settings.DefineSetting($"{this.GetType().Name}_last_reset",        DateTime.UtcNow);
             _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", 0);
             _killsAtResetMatch = settings.DefineSetting($"{this.GetType().Name}_kills_match_reset", 0);
-            _killsMatch        = settings.DefineSetting($"{this.GetType().Name}_kills_match",       0);
-            _killsDaily        = settings.DefineSetting($"{this.GetType().Name}_kills_daily",       0);
         }
 
         public override async Task Initialize()
@@ -92,8 +88,6 @@ namespace Nekres.Stream_Out.Core.Services {
             if (totalKills < 0) {
                 return false;
             }
-            _killsDaily.Value        = 0;
-            _killsMatch.Value        = 0;
             _killsAtResetDaily.Value = totalKills;
             _killsAtResetMatch.Value = totalKills;
             _lastResetTimeWvW.Value = DateTime.UtcNow;
@@ -119,16 +113,11 @@ namespace Nekres.Stream_Out.Core.Services {
                 return false;
             }
             _killsAtResetDaily.Value = totalKills;
-            _killsDaily.Value        = 0;
             return true;
         }
 
         protected override async Task Update()
         {
-            if (!Gw2ApiManager.HasPermission(TokenPermission.Account)) {
-                return;
-            }
-
             var account = StreamOutModule.Instance?.Account;
             if (account == null) {
                 return;
@@ -156,11 +145,11 @@ namespace Nekres.Stream_Out.Core.Services {
 
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_TOTAL}", $"{prefixKills}{totalKillsWvW}{suffixKills}");
 
-            _killsDaily.Value = totalKillsWvW - _killsAtResetDaily.Value;
-            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_DAY}",   $"{prefixKills}{_killsDaily.Value}{suffixKills}");
+            var killsDaily = totalKillsWvW - _killsAtResetDaily.Value;
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_DAY}",   $"{prefixKills}{killsDaily}{suffixKills}");
 
-            _killsMatch.Value = totalKillsWvW - _killsAtResetMatch.Value;
-            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_WEEK}", $"{prefixKills}{_killsMatch.Value}{suffixKills}");
+            var killsMatch = totalKillsWvW - _killsAtResetMatch.Value;
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{WVW_KILLS_WEEK}", $"{prefixKills}{killsMatch}{suffixKills}");
         }
 
         public override async Task Clear()

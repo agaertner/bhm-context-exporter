@@ -151,6 +151,9 @@ namespace Nekres.Stream_Out {
         private async void SubTokenUpdated(object o, ValueEventArgs<IEnumerable<TokenPermission>> e)
         {
             this.HasSubToken = true;
+            if (!Gw2ApiManager.HasPermission(TokenPermission.Account)) {
+                return;
+            }
             this.Account = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.GetAsync()).Unwrap();
         }
 
