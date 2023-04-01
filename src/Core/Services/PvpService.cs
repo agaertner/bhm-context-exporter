@@ -1,4 +1,5 @@
-﻿using Blish_HUD.Modules.Managers;
+﻿using Blish_HUD.Extended;
+using Blish_HUD.Modules.Managers;
 using Blish_HUD.Settings;
 using Gw2Sharp.WebApi.V2.Models;
 using System;
@@ -6,18 +7,14 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Blish_HUD.Extended;
 
-namespace Nekres.Stream_Out.Core.Services
-{
+namespace Nekres.Stream_Out.Core.Services {
     internal class PvpService : ExportService
     {
         private Gw2ApiManager Gw2ApiManager => StreamOutModule.Instance?.Gw2ApiManager;
         private DirectoriesManager DirectoriesManager => StreamOutModule.Instance?.DirectoriesManager;
         private ContentsManager ContentsManager => StreamOutModule.Instance?.ContentsManager;
         private StreamOutModule.UnicodeSigning UnicodeSigning => StreamOutModule.Instance?.AddUnicodeSymbols.Value ?? StreamOutModule.UnicodeSigning.Suffixed;
-        private SettingEntry<int> SessionKillsPvP => StreamOutModule.Instance?.SessionKillsPvP;
-        private SettingEntry<int> TotalKillsAtResetPvP => StreamOutModule.Instance?.TotalKillsAtResetPvP;
 
         private const string PVP_KILLS_TOTAL = "pvp_kills_total.txt";
         private const string PVP_KILLS_DAY = "pvp_kills_day.txt";
@@ -26,14 +23,17 @@ namespace Nekres.Stream_Out.Core.Services
         private const string PVP_TIER_ICON = "pvp_tier_icon.png";
         private const string PVP_WINRATE = "pvp_winrate.txt";
 
-        private const string SWORDS = "\u2694"; // ⚔
+        private const string            SWORDS = "\u2694"; // ⚔
 
-        public PvpService()
-        {
+        private SettingEntry<int> _killsDaily;
+        private SettingEntry<int> _killsAtResetDaily;
+
+        public PvpService(SettingCollection settings) : base(settings) {
+            _killsDaily        = settings.DefineSetting($"{this.GetType().Name}_kills_daily",       0);
+            _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", 0);
         }
 
-        public override async Task Initialize()
-        {
+        public override async Task Initialize() {
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_RANK}", "Bronze I", false);
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_WINRATE}", "50%", false);
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_DAY}", $"0{SWORDS}", false);
@@ -165,10 +165,15 @@ namespace Nekres.Stream_Out.Core.Services
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_WINRATE}", $"{Math.Round(winRatio).ToString(CultureInfo.InvariantCulture)}%");
         }
 
-        protected override async Task ResetDaily()
+        protected override async Task<bool> ResetDaily()
         {
-            SessionKillsPvP.Value = 0;
-            TotalKillsAtResetPvP.Value = await RequestTotalKillsForPvP();
+            var totalKills = await RequestTotalKillsForPvP();
+            if (totalKills < 0) {
+                return false;
+            }
+            _killsDaily.Value        = 0;
+            _killsAtResetDaily.Value = totalKills;
+            return true;
         }
 
         protected override async Task Update()
@@ -179,13 +184,16 @@ namespace Nekres.Stream_Out.Core.Services
             var prefixKills = UnicodeSigning == StreamOutModule.UnicodeSigning.Prefixed ? SWORDS : string.Empty;
             var suffixKills = UnicodeSigning == StreamOutModule.UnicodeSigning.Suffixed ? SWORDS : string.Empty;
 
-            var totalKillsPvP = await RequestTotalKillsForPvP();
-            if (totalKillsPvP >= 0)
-            {
-                SessionKillsPvP.Value = totalKillsPvP - TotalKillsAtResetPvP.Value;
-                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_DAY}", $"{prefixKills}{SessionKillsPvP.Value}{suffixKills}");
-                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_TOTAL}", $"{prefixKills}{totalKillsPvP}{suffixKills}");
+            var totalKills = await RequestTotalKillsForPvP();
+
+            if (totalKills < 0) {
+                return;
             }
+
+            _killsDaily.Value = totalKills - _killsAtResetDaily.Value;
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_DAY}", $"{prefixKills}{_killsDaily.Value}{suffixKills}");
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_TOTAL}", $"{prefixKills}{totalKills}{suffixKills}");
+            
         }
 
         public override async Task Clear()

@@ -1,24 +1,23 @@
 ﻿using Blish_HUD;
+using Blish_HUD.Extended;
 using Blish_HUD.Modules.Managers;
+using Blish_HUD.Settings;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Blish_HUD.Extended;
 
-namespace Nekres.Stream_Out.Core.Services
-{
+namespace Nekres.Stream_Out.Core.Services {
     internal class KillProofService : ExportService
     {
         private DirectoriesManager DirectoriesManager => StreamOutModule.Instance?.DirectoriesManager;
         private ContentsManager ContentsManager => StreamOutModule.Instance?.ContentsManager;
-        private string AccountName => StreamOutModule.Instance?.AccountName.Value;
 
         private const string KILLPROOF_ME_UNSTABLE_FRACTAL_ESSENCE = "unstable_fractal_essence.txt";
         private const string KILLPROOF_ME_LEGENDARY_DIVINATION = "legendary_divination.txt";
         private const string KILLPROOF_ME_LEGENDARY_INSIGHT = "legendary_insight.txt";
         private const string KILLPROOF_API_URL = "https://killproof.me/api/kp/";
 
-        public KillProofService()
+        public KillProofService(SettingCollection settings) : base(settings) 
         {
         }
 
@@ -35,9 +34,13 @@ namespace Nekres.Stream_Out.Core.Services
             await UpdateKillProofs();
         }
 
-        private async Task UpdateKillProofs()
-        {
-            await TaskUtil.GetJsonResponse<dynamic>($"{KILLPROOF_API_URL}{AccountName}?lang={GameService.Overlay.UserLocale.Value}").ContinueWith(async task =>
+        private async Task UpdateKillProofs() {
+            var account = StreamOutModule.Instance?.Account;
+            if (account == null || string.IsNullOrEmpty(account.Name)) {
+                return;
+            }
+
+            await TaskUtil.GetJsonResponse<dynamic>($"{KILLPROOF_API_URL}{account.Name}?lang={GameService.Overlay.UserLocale.Value}").ContinueWith(async task =>
             {
                 if (task.IsFaulted || !task.Result.Item1) {
                     return;

@@ -12,14 +12,10 @@ using static Blish_HUD.GameService;
 namespace Nekres.Stream_Out.Core.Services {
     internal class CharacterService : ExportService
     {
-        private static Gw2ApiManager Gw2ApiManager => StreamOutModule.Instance?.Gw2ApiManager;
-        private DirectoriesManager DirectoriesManager => StreamOutModule.Instance?.DirectoriesManager;
-        private ContentsManager ContentsManager => StreamOutModule.Instance?.ContentsManager;
-        private SettingEntry<int> SessionDeathsWvW => StreamOutModule.Instance?.SessionDeathsWvW;
-        private SettingEntry<int> TotalDeathsAtResetWvW => StreamOutModule.Instance?.TotalDeathsAtResetWvW;
-        private SettingEntry<int> SessionDeathsDaily => StreamOutModule.Instance?.SessionDeathsDaily;
-        private SettingEntry<int> TotalDeathsAtResetDaily => StreamOutModule.Instance?.TotalDeathsAtResetDaily;
-        private StreamOutModule.UnicodeSigning UnicodeSigning => StreamOutModule.Instance?.AddUnicodeSymbols.Value ?? StreamOutModule.UnicodeSigning.Suffixed;
+        private static Gw2ApiManager                  Gw2ApiManager      => StreamOutModule.Instance?.Gw2ApiManager;
+        private        DirectoriesManager             DirectoriesManager => StreamOutModule.Instance?.DirectoriesManager;
+        private        ContentsManager                ContentsManager    => StreamOutModule.Instance?.ContentsManager;
+        private        StreamOutModule.UnicodeSigning UnicodeSigning     => StreamOutModule.Instance?.AddUnicodeSymbols.Value ?? StreamOutModule.UnicodeSigning.Suffixed;
 
         private const string CHARACTER_NAME  = "character_name.txt";
         private const string PROFESSION_ICON = "profession_icon.png";
@@ -38,7 +34,13 @@ namespace Nekres.Stream_Out.Core.Services {
 
         private SettingEntry<bool> UseCatmanderTag => StreamOutModule.Instance.UseCatmanderTag;
 
-        public CharacterService()
+        private SettingEntry<int> _deathsWeekly;
+        private SettingEntry<int> _deathsDaily;
+
+        private SettingEntry<int> _deathsAtResetWeekly;
+        private SettingEntry<int> _deathsAtResetDaily;
+
+        public CharacterService(SettingCollection settings) : base(settings) 
         {
             Gw2Mumble.PlayerCharacter.NameChanged           += OnNameChanged;
             Gw2Mumble.PlayerCharacter.SpecializationChanged += OnSpecializationChanged;
@@ -47,6 +49,11 @@ namespace Nekres.Stream_Out.Core.Services {
             UseCatmanderTag.SettingChanged                  += OnUseCatmanderTagSettingChanged;
             OnNameChanged(null, new ValueEventArgs<string>(Gw2Mumble.PlayerCharacter.Name));
             OnSpecializationChanged(null, new ValueEventArgs<int>(Gw2Mumble.PlayerCharacter.Specialization));
+
+            _deathsWeekly       = settings.DefineSetting($"{this.GetType().Name}_deaths_weekly",        0);
+            _deathsDaily        = settings.DefineSetting($"{this.GetType().Name}_deaths_daily",      0);
+            _deathsAtResetWeekly = settings.DefineSetting($"{this.GetType().Name}_deaths_weekly_reset",   0);
+            _deathsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_deaths_daily_reset", 0);
         }
 
         public override async Task Initialize()
@@ -145,14 +152,36 @@ namespace Nekres.Stream_Out.Core.Services {
             if (!Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Characters })) {
                 return -1;
             }
-
-            return await Gw2ApiManager.Gw2ApiClient.V2.Characters.AllAsync().ContinueWith(task => task.IsFaulted ? -1 : task.Result.Sum(x => x.Deaths));
+            var chars = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Characters.AllAsync()).Unwrap();
+            if (chars == null) {
+                return -1;
+            }
+            return chars.Sum(x => x.Deaths);
         }
 
-        protected override async Task ResetDaily()
+        protected override async Task<bool> ResetDaily()
         {
-            SessionDeathsDaily.Value = 0;
-            TotalDeathsAtResetDaily.Value = await RequestTotalDeaths();
+            var totalDeaths = await RequestTotalDeaths();
+
+            if (totalDeaths < 0) {
+                return false;
+            }
+
+            _deathsDaily.Value        = 0;
+            _deathsAtResetDaily.Value = totalDeaths;
+            return true;
+        }
+
+        protected override async Task<bool> ResetWeekly() {
+            var totalDeaths = await RequestTotalDeaths();
+
+            if (totalDeaths < 0) {
+                return false;
+            }
+
+            _deathsWeekly.Value        = 0;
+            _deathsAtResetWeekly.Value = totalDeaths;
+            return true;
         }
 
         protected override async Task Update()
@@ -162,13 +191,16 @@ namespace Nekres.Stream_Out.Core.Services {
 
             // Deaths
             var totalDeaths = await RequestTotalDeaths();
-            if (totalDeaths >= 0)
-            {
-                SessionDeathsDaily.Value = totalDeaths - TotalDeathsAtResetDaily.Value;
-                SessionDeathsWvW.Value = totalDeaths - TotalDeathsAtResetWvW.Value;
-                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_WEEK}", $"{prefixDeaths}{SessionDeathsWvW.Value}{suffixDeaths}");
-                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_DAY}", $"{prefixDeaths}{SessionDeathsDaily.Value}{suffixDeaths}");
+
+            if (totalDeaths < 0) {
+                return;
             }
+
+            _deathsDaily.Value = totalDeaths - _deathsAtResetDaily.Value;
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_WEEK}", $"{prefixDeaths}{_deathsDaily.Value}{suffixDeaths}");
+
+            _deathsWeekly.Value = totalDeaths - _deathsAtResetWeekly.Value;
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_DAY}", $"{prefixDeaths}{_deathsWeekly.Value}{suffixDeaths}");
         }
 
         public override async Task Clear()

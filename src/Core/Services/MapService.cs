@@ -1,6 +1,7 @@
 ﻿using Blish_HUD;
 using Blish_HUD.Extended;
 using Blish_HUD.Modules.Managers;
+using Blish_HUD.Settings;
 using Gw2Sharp.Models;
 using Gw2Sharp.WebApi.V2.Models;
 using System;
@@ -19,7 +20,7 @@ namespace Nekres.Stream_Out.Core.Services {
         private const string MAP_TYPE = "map_type.txt";
         private const string MAP_NAME = "map_name.txt";
 
-        public MapService()
+        public MapService(SettingCollection settings) : base(settings) 
         {
             Gw2Mumble.CurrentMap.MapChanged += OnMapChanged;
             OnMapChanged(null, new ValueEventArgs<int>(Gw2Mumble.CurrentMap.Id));

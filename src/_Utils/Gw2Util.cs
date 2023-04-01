@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using static Blish_HUD.GameService;
 using static Nekres.Stream_Out.StreamOutModule;
 using Graphics = System.Drawing.Graphics;
-namespace Nekres.Stream_Out
-{
+namespace Nekres.Stream_Out {
     internal static class Gw2Util
     {
         private static readonly Color Gold = Color.FromArgb(210, 180, 66);
@@ -200,6 +199,12 @@ namespace Nekres.Stream_Out
         {
             var nextDay = DateTime.UtcNow.AddDays(1);
             return new DateTime(nextDay.Year, nextDay.Month, nextDay.Day, 2, 0, 0).ToUniversalTime(); // UTC+2
+        }
+
+        public static DateTime GetWeeklyResetTime() {
+            var currTime = DateTime.UtcNow;
+            var nextWeek = currTime.AddDays(((int)DayOfWeek.Monday - (int)currTime.DayOfWeek + 7) % 7);
+            return new DateTime(nextWeek.Year, nextWeek.Month, nextWeek.Day, 2, 0, 0).ToUniversalTime(); // UTC+2
         }
     }
 }

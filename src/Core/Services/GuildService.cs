@@ -1,5 +1,6 @@
-﻿using Blish_HUD;
+﻿using Blish_HUD.Extended;
 using Blish_HUD.Modules.Managers;
+using Blish_HUD.Settings;
 using Gw2Sharp.WebApi.V2.Models;
 using System;
 using System.Collections.Generic;
@@ -9,12 +10,10 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Blish_HUD.Extended;
-using Color = System.Drawing.Color;
 using static Blish_HUD.GameService;
+using Color = System.Drawing.Color;
 
-namespace Nekres.Stream_Out.Core.Services
-{
+namespace Nekres.Stream_Out.Core.Services {
     internal class GuildService : ExportService
     {
         private Gw2ApiManager Gw2ApiManager => StreamOutModule.Instance?.Gw2ApiManager;
@@ -27,7 +26,7 @@ namespace Nekres.Stream_Out.Core.Services
 
         private Regex GUILD_MOTD_PUBLIC = new Regex(@"(?<=\[public\]).*(?=\[\/public\])", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-        public GuildService()
+        public GuildService(SettingCollection settings) : base(settings) 
         {
         }
 
