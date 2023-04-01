@@ -47,7 +47,7 @@ namespace Nekres.Stream_Out.Core.Services {
             OnNameChanged(null, new ValueEventArgs<string>(Gw2Mumble.PlayerCharacter.Name));
             OnSpecializationChanged(null, new ValueEventArgs<int>(Gw2Mumble.PlayerCharacter.Specialization));
 
-            _deathsAtResetWeekly = settings.DefineSetting($"{this.GetType().Name}_deaths_weekly_reset",   0);
+            _deathsAtResetWeekly = settings.DefineSetting($"{this.GetType().Name}_deaths_weekly_reset", 0);
             _deathsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_deaths_daily_reset", 0);
         }
 
