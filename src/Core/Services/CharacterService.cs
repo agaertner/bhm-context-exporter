@@ -34,9 +34,6 @@ namespace Nekres.Stream_Out.Core.Services {
 
         private SettingEntry<bool> UseCatmanderTag => StreamOutModule.Instance.UseCatmanderTag;
 
-        private SettingEntry<int> _deathsWeekly;
-        private SettingEntry<int> _deathsDaily;
-
         private SettingEntry<int> _deathsAtResetWeekly;
         private SettingEntry<int> _deathsAtResetDaily;
 
@@ -50,8 +47,6 @@ namespace Nekres.Stream_Out.Core.Services {
             OnNameChanged(null, new ValueEventArgs<string>(Gw2Mumble.PlayerCharacter.Name));
             OnSpecializationChanged(null, new ValueEventArgs<int>(Gw2Mumble.PlayerCharacter.Specialization));
 
-            _deathsWeekly       = settings.DefineSetting($"{this.GetType().Name}_deaths_weekly",        0);
-            _deathsDaily        = settings.DefineSetting($"{this.GetType().Name}_deaths_daily",      0);
             _deathsAtResetWeekly = settings.DefineSetting($"{this.GetType().Name}_deaths_weekly_reset",   0);
             _deathsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_deaths_daily_reset", 0);
         }
@@ -167,7 +162,6 @@ namespace Nekres.Stream_Out.Core.Services {
                 return false;
             }
 
-            _deathsDaily.Value        = 0;
             _deathsAtResetDaily.Value = totalDeaths;
             return true;
         }
@@ -179,7 +173,6 @@ namespace Nekres.Stream_Out.Core.Services {
                 return false;
             }
 
-            _deathsWeekly.Value        = 0;
             _deathsAtResetWeekly.Value = totalDeaths;
             return true;
         }
@@ -196,11 +189,11 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            _deathsDaily.Value = totalDeaths - _deathsAtResetDaily.Value;
-            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_WEEK}", $"{prefixDeaths}{_deathsDaily.Value}{suffixDeaths}");
+            var deathsDaily = totalDeaths - _deathsAtResetDaily.Value;
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_WEEK}", $"{prefixDeaths}{deathsDaily}{suffixDeaths}");
 
-            _deathsWeekly.Value = totalDeaths - _deathsAtResetWeekly.Value;
-            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_DAY}", $"{prefixDeaths}{_deathsWeekly.Value}{suffixDeaths}");
+            var deathsWeekly = totalDeaths - _deathsAtResetWeekly.Value;
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{DEATHS_DAY}", $"{prefixDeaths}{deathsWeekly}{suffixDeaths}");
         }
 
         public override async Task Clear()

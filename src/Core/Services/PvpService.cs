@@ -23,13 +23,11 @@ namespace Nekres.Stream_Out.Core.Services {
         private const string PVP_TIER_ICON = "pvp_tier_icon.png";
         private const string PVP_WINRATE = "pvp_winrate.txt";
 
-        private const string            SWORDS = "\u2694"; // ⚔
+        private const string SWORDS = "\u2694"; // ⚔
 
-        private SettingEntry<int> _killsDaily;
         private SettingEntry<int> _killsAtResetDaily;
 
         public PvpService(SettingCollection settings) : base(settings) {
-            _killsDaily        = settings.DefineSetting($"{this.GetType().Name}_kills_daily",       0);
             _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", 0);
         }
 
@@ -72,70 +70,66 @@ namespace Nekres.Stream_Out.Core.Services {
 
             var season = seasons.OrderByDescending(x => x.End).First();
 
-            await Gw2ApiManager.Gw2ApiClient.V2.Pvp.Standings.GetAsync().ContinueWith(async t =>
+            var standings = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Pvp.Standings.GetAsync()).Unwrap();
+
+            var standing = standings?.FirstOrDefault(x => x.SeasonId.Equals(season.Id));
+
+            if (standing?.Current.Rating == null) {
+                return;
+            }
+
+            var rank = season.Ranks.First();
+            var tier = 1;
+            var found = false;
+            var ranksTotal = season.Ranks.Count;
+
+            var tiers = season.Ranks.SelectMany(x => x.Tiers).ToList();
+            var maxRating = tiers.MaxBy(y => y.Rating).Rating;
+            var minRating = tiers.MinBy(y => y.Rating).Rating;
+
+            // overshoots
+            if (standing.Current.Rating > maxRating)
             {
-                if (t.IsFaulted) {
-                    return;
+                rank = season.Ranks.Last();
+                tier = rank.Tiers.Count;
+                found = true;
+            }
+
+            // undershoots
+            if (standing.Current.Rating < minRating)
+            {
+                rank = season.Ranks.First();
+                tier = 1;
+                found = true;
+            }
+
+            for (var i = 0; i < ranksTotal; i++)
+            {
+                if (found) {
+                    break;
                 }
 
-                var standing = t.Result.FirstOrDefault(x => x.SeasonId.Equals(season.Id));
+                var currentRank = season.Ranks[i];
+                var tiersTotal = currentRank.Tiers.Count;
 
-                if (standing?.Current.Rating == null) {
-                    return;
-                }
-
-                var rank = season.Ranks.First();
-                var tier = 1;
-                var found = false;
-                var ranksTotal = season.Ranks.Count;
-
-                var tiers = season.Ranks.SelectMany(x => x.Tiers).ToList();
-                var maxRating = tiers.MaxBy(y => y.Rating).Rating;
-                var minRating = tiers.MinBy(y => y.Rating).Rating;
-
-                // overshoots
-                if (standing.Current.Rating > maxRating)
+                for (var j = 0; j < tiersTotal; j++)
                 {
-                    rank = season.Ranks.Last();
-                    tier = rank.Tiers.Count;
-                    found = true;
-                }
+                    var nextTierRating = currentRank.Tiers[j].Rating;
 
-                // undershoots
-                if (standing.Current.Rating < minRating)
-                {
-                    rank = season.Ranks.First();
-                    tier = 1;
-                    found = true;
-                }
-
-                for (var i = 0; i < ranksTotal; i++)
-                {
-                    if (found) {
-                        break;
+                    if (standing.Current.Rating > nextTierRating) {
+                        continue;
                     }
-
-                    var currentRank = season.Ranks[i];
-                    var tiersTotal = currentRank.Tiers.Count;
-
-                    for (var j = 0; j < tiersTotal; j++)
-                    {
-                        var nextTierRating = currentRank.Tiers[j].Rating;
-
-                        if (standing.Current.Rating > nextTierRating) {
-                            continue;
-                        }
-                        tier = j + 1;
-                        rank = currentRank;
-                        found = true;
-                        break;
-                    }
+                    tier = j + 1;
+                    rank = currentRank;
+                    found = true;
+                    break;
                 }
+            }
 
-                await Task.Run(() => Gw2Util.GeneratePvpTierImage($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_TIER_ICON}", tier, rank.Tiers.Count));
-                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_RANK}", $"{rank.Name} {tier.ToRomanNumeral()}");
-                await TextureUtil.SaveToImage(rank.Overlay, $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_RANK_ICON}");
-            });
+            await Task.Run(() => Gw2Util.GeneratePvpTierImage($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_TIER_ICON}", tier, rank.Tiers.Count));
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_RANK}", $"{rank.Name} {tier.ToRomanNumeral()}");
+            await TextureUtil.SaveToImage(rank.Overlay, $"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_RANK_ICON}");
+            
         }
 
         private async Task UpdateStatsForPvp()
@@ -171,7 +165,6 @@ namespace Nekres.Stream_Out.Core.Services {
             if (totalKills < 0) {
                 return false;
             }
-            _killsDaily.Value        = 0;
             _killsAtResetDaily.Value = totalKills;
             return true;
         }
@@ -190,8 +183,8 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            _killsDaily.Value = totalKills - _killsAtResetDaily.Value;
-            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_DAY}", $"{prefixKills}{_killsDaily.Value}{suffixKills}");
+            var killsDaily = totalKills - _killsAtResetDaily.Value;
+            await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_DAY}", $"{prefixKills}{killsDaily}{suffixKills}");
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{PVP_KILLS_TOTAL}", $"{prefixKills}{totalKills}{suffixKills}");
             
         }

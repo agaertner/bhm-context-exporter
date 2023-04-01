@@ -27,32 +27,41 @@ namespace Nekres.Stream_Out.Core.Services {
             }
             _prevApiRequestTime = DateTime.UtcNow;
 
-            await DoResetDaily();
-            await DoResetWeekly();
+            if (!await DoResetDaily() || !await DoResetWeekly()) {
+                return;
+            }
+
             await this.Update();
         }
 
-        private async Task DoResetDaily()
+        private async Task<bool> DoResetDaily()
         {
             if (_lastResetTimeDaily.Value < _nextResetTimeDaily.Value) {
-                return;
+                return true;
             }
 
-            if (await this.ResetDaily()) {
-                _lastResetTimeDaily.Value = DateTime.UtcNow;
-                _nextResetTimeDaily.Value = Gw2Util.GetDailyResetTime();
+
+            if (!await this.ResetDaily()) {
+                return false;
             }
+
+            _lastResetTimeDaily.Value = DateTime.UtcNow;
+            _nextResetTimeDaily.Value = Gw2Util.GetDailyResetTime();
+            return true;
         }
 
-        private async Task DoResetWeekly() {
+        private async Task<bool> DoResetWeekly() {
             if (_lastResetTimeWeekly.Value < _nextResetTimeWeekly.Value) {
-                return;
+                return true;
             }
 
-            if (await this.ResetWeekly()) {
-                _lastResetTimeWeekly.Value = DateTime.UtcNow;
-                _nextResetTimeWeekly.Value = Gw2Util.GetWeeklyResetTime();
+            if (!await this.ResetWeekly()) {
+                return false;
             }
+
+            _lastResetTimeWeekly.Value = DateTime.UtcNow;
+            _nextResetTimeWeekly.Value = Gw2Util.GetWeeklyResetTime();
+            return true;
         }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
