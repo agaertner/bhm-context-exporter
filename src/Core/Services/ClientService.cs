@@ -5,8 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using static Blish_HUD.GameService;
 
-namespace Nekres.Stream_Out.Core.Services
-{
+namespace Nekres.Stream_Out.Core.Services {
     internal class ClientService : ExportService
     {
         private DirectoriesManager DirectoriesManager => StreamOutModule.Instance?.DirectoriesManager;
@@ -15,7 +14,7 @@ namespace Nekres.Stream_Out.Core.Services
         private const string SERVER_ADDRESS = "server_address.txt";
         private string _prevServerAddress;
 
-        public ClientService()
+        public ClientService(SettingCollection settings) : base(settings) 
         {
             _prevServerAddress = string.Empty;
         }

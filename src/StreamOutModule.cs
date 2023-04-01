@@ -1,4 +1,5 @@
 ﻿using Blish_HUD;
+using Blish_HUD.Extended;
 using Blish_HUD.Extended.Core.Views;
 using Blish_HUD.Graphics.UI;
 using Blish_HUD.Modules;
@@ -12,9 +13,9 @@ using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading.Tasks;
+using Module = Blish_HUD.Modules.Module;
 
-namespace Nekres.Stream_Out
-{
+namespace Nekres.Stream_Out {
     [Export(typeof(Module))]
     public class StreamOutModule : Module
     {
@@ -46,28 +47,10 @@ namespace Nekres.Stream_Out
         internal SettingEntry<bool> ExportKillProofs;
 
         // Hidden settings cache
-        internal SettingEntry<DateTime> ResetTimeWvW;
-        internal SettingEntry<DateTime> ResetTimeDaily;
+        private  SettingCollection _selfManagedSettings;
 
-        internal SettingEntry<int> SessionKillsWvW;
-        internal SettingEntry<int> SessionKillsWvwDaily;
-        internal SettingEntry<int> SessionKillsPvP;
-
-        internal SettingEntry<int> TotalKillsAtResetWvW;
-        internal SettingEntry<int> TotalKillsAtResetPvP;
-
-        internal SettingEntry<int> TotalDeathsAtResetWvW;
-        internal SettingEntry<int> TotalDeathsAtResetDaily;
-
-        internal SettingEntry<int> SessionDeathsWvW;
-        internal SettingEntry<int> SessionDeathsDaily;
-
-        internal SettingEntry<Guid> AccountGuid;
-        internal SettingEntry<string> AccountName;
-
-        internal bool HasSubToken { get; private set; }
-
-        internal string WebApiDown = "Unable to connect to the official Guild Wars 2 WebApi. Check if the WebApi is down for maintenance.";
+        internal bool   HasSubToken { get; private set; }
+        internal Account Account { get; private set; }
 
         internal enum UnicodeSigning
         {
@@ -87,7 +70,7 @@ namespace Nekres.Stream_Out
         protected override void DefineSettings(SettingCollection settings)
         {
             var general = settings.AddSubCollection("General", true, false);
-            OnlyLastDigitSettingEntry = general.DefineSetting("OnlyLastDigits",true, () => "Only Output Last Digits of Server Address", () => "Only outputs the last digits of the server address you are currently connected to.\nThis is the address shown when entering \"/ip\" in chat.");
+            OnlyLastDigitSettingEntry = general.DefineSetting("OnlyLastDigits", true, () => "Only Output Last Digits of Server Address", () => "Only outputs the last digits of the server address you are currently connected to.\nThis is the address shown when entering \"/ip\" in chat.");
             UseCatmanderTag = general.DefineSetting("CatmanderTag", false, () => "Use Catmander Tag", () => $"Replaces the Commander icon with the Catmander icon if you tag up as Commander in-game.");
             AddUnicodeSymbols = general.DefineSetting("UnicodeSymbols", UnicodeSigning.Suffixed, () => "Numeric Value Signing", () => "The way numeric values should be signed with unicode symbols.");
 
@@ -123,20 +106,7 @@ namespace Nekres.Stream_Out
                 () => "Export Wallet Info",
                 () => "Currencies such as coins and karma.");
 
-            var cache = settings.AddSubCollection("CachedValues", false, false);
-            AccountGuid = cache.DefineSetting("AccountGuid", Guid.Empty);
-            AccountName = cache.DefineSetting("AccountName", string.Empty);
-            ResetTimeWvW = cache.DefineSetting("ResetTimeWvW", DateTime.UtcNow);
-            ResetTimeDaily = cache.DefineSetting("ResetTimeDaily", DateTime.UtcNow);
-            SessionKillsWvW = cache.DefineSetting("SessionKillsWvW", 0);
-            SessionKillsWvwDaily = cache.DefineSetting("SessionsKillsWvWDaily", 0);
-            SessionKillsPvP = cache.DefineSetting("SessionKillsPvP", 0);
-            SessionDeathsWvW = cache.DefineSetting("SessionDeathsWvW", 0);
-            SessionDeathsDaily = cache.DefineSetting("SessionDeathsDaily", 0);
-            TotalKillsAtResetWvW = cache.DefineSetting("TotalKillsAtResetWvW", 0);
-            TotalKillsAtResetPvP = cache.DefineSetting("TotalKillsAtResetPvP", 0);
-            TotalDeathsAtResetWvW = cache.DefineSetting("TotalDeathsAtResetWvW", 0);
-            TotalDeathsAtResetDaily = cache.DefineSetting("TotalDeathsAtResetDaily", 0);
+            _selfManagedSettings = settings.AddSubCollection("CachedValues", false, false);
         }
 
         public override IView GetSettingsView()
@@ -166,7 +136,7 @@ namespace Nekres.Stream_Out
             var service = _allExportServices.FirstOrDefault(x => x.GetType() == typeof(TType));
             if (enabled && service == null)
             {
-                service = (TType)Activator.CreateInstance(typeof(TType));
+                service = (TType)Activator.CreateInstance(typeof(TType), _selfManagedSettings);
                 _allExportServices.Add(service);
                 await service.Initialize();
             }
@@ -178,9 +148,10 @@ namespace Nekres.Stream_Out
             }
         }
 
-        private void SubTokenUpdated(object o, ValueEventArgs<IEnumerable<TokenPermission>> e)
+        private async void SubTokenUpdated(object o, ValueEventArgs<IEnumerable<TokenPermission>> e)
         {
-            HasSubToken = true;
+            this.HasSubToken = true;
+            this.Account = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.GetAsync()).Unwrap();
         }
 
         protected override async Task LoadAsync()

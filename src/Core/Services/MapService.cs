@@ -1,7 +1,8 @@
 ﻿using Blish_HUD;
+using Blish_HUD.Extended;
 using Blish_HUD.Modules.Managers;
+using Blish_HUD.Settings;
 using Gw2Sharp.Models;
-using Gw2Sharp.WebApi.Exceptions;
 using Gw2Sharp.WebApi.V2.Models;
 using System;
 using System.Collections.Generic;
@@ -10,8 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using static Blish_HUD.GameService;
 
-namespace Nekres.Stream_Out.Core.Services
-{
+namespace Nekres.Stream_Out.Core.Services {
     internal class MapService : ExportService
     {
         private Gw2ApiManager Gw2ApiManager => StreamOutModule.Instance?.Gw2ApiManager;
@@ -20,16 +20,14 @@ namespace Nekres.Stream_Out.Core.Services
         private const string MAP_TYPE = "map_type.txt";
         private const string MAP_NAME = "map_name.txt";
 
-        public MapService()
+        public MapService(SettingCollection settings) : base(settings) 
         {
             Gw2Mumble.CurrentMap.MapChanged += OnMapChanged;
             OnMapChanged(null, new ValueEventArgs<int>(Gw2Mumble.CurrentMap.Id));
         }
 
-        private async Task<IEnumerable<ContinentFloorRegionMapSector>> RequestSectors(int continentId, int floor, int regionId, int mapId)
-        {
-            return await Gw2ApiManager.Gw2ApiClient.V2.Continents[continentId].Floors[floor].Regions[regionId].Maps[mapId].Sectors.AllAsync()
-                .ContinueWith(task => task.IsFaulted ? Enumerable.Empty<ContinentFloorRegionMapSector>() : task.Result);
+        private async Task<IEnumerable<ContinentFloorRegionMapSector>> RequestSectors(int continentId, int floor, int regionId, int mapId) {
+            return await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Continents[continentId].Floors[floor].Regions[regionId].Maps[mapId].Sectors.AllAsync()).Unwrap();
         }
 
         private async void OnMapChanged(object o, ValueEventArgs<int> e)
@@ -41,19 +39,10 @@ namespace Nekres.Stream_Out.Core.Services
                 return;
             }
 
-            Map map;
-            try
-            {
-                map = await Gw2ApiManager.Gw2ApiClient.V2.Maps.GetAsync(e.Value);
-                if (map == null)
-                    throw new NullReferenceException("Unknown error.");
-            }
-            catch (Exception ex) when (ex is UnexpectedStatusException or NullReferenceException)
-            {
-                StreamOutModule.Logger.Warn(StreamOutModule.Instance.WebApiDown);
-                return;
-            } catch (RequestException exe) {
-                StreamOutModule.Logger.Error(exe, exe.Message); 
+            var map = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Maps.GetAsync(e.Value)).Unwrap();
+            if (map == null) {
+                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{MAP_NAME}", string.Empty);
+                await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{MAP_TYPE}", string.Empty);
                 return;
             }
 
@@ -62,8 +51,9 @@ namespace Nekres.Stream_Out.Core.Services
             if (map.Name.Equals(map.RegionName, StringComparison.InvariantCultureIgnoreCase))
             {
                 var defaultSector = (await RequestSectors(map.ContinentId, map.DefaultFloor, map.RegionId, map.Id)).FirstOrDefault();
-                if (defaultSector != null && !string.IsNullOrEmpty(defaultSector.Name))
+                if (defaultSector != null && !string.IsNullOrEmpty(defaultSector.Name)) { 
                     location = defaultSector.Name.Replace("<br>", " ");
+                }
             }
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{MAP_NAME}", location);
 

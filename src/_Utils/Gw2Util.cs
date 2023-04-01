@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using static Blish_HUD.GameService;
 using static Nekres.Stream_Out.StreamOutModule;
 using Graphics = System.Drawing.Graphics;
-namespace Nekres.Stream_Out
-{
+namespace Nekres.Stream_Out {
     internal static class Gw2Util
     {
         private static readonly Color Gold = Color.FromArgb(210, 180, 66);
@@ -17,7 +16,10 @@ namespace Nekres.Stream_Out
 
         public static async Task GenerateCoinsImage(string filePath, int coins, bool overwrite = true)
         {
-            if (!overwrite && File.Exists(filePath)) return;
+            if (!overwrite && File.Exists(filePath)) {
+                return;
+            }
+
             var copper = coins % 100;
             coins = (coins - copper) / 100;
             var silver = coins % 100;
@@ -41,10 +43,13 @@ namespace Nekres.Stream_Out
 
             var margin = 5;
             var width = copperSize.Width + copperIcon.Width;
-            if (toDisplay > 1)
+            if (toDisplay > 1) {
                 width += margin + silverSize.Width + silverIcon.Width;
-            if (toDisplay > 2)
+            }
+
+            if (toDisplay > 2) {
                 width += margin + goldSize.Width + goldIcon.Width;
+            }
 
             var height = Math.Max(fontHeight, Math.Max(Math.Max(silverIcon.Height, goldIcon.Height), copperIcon.Height));
             using (var bitmap = new Bitmap(width, height))
@@ -83,8 +88,9 @@ namespace Nekres.Stream_Out
                                 break;
                         }
 
-                        using (var brush = new SolidBrush(color))
+                        using (var brush = new SolidBrush(color)) {
                             canvas.DrawString(value.ToString(), font, brush, x, height / 2 - size.Height / 2);
+                        }
 
                         x += toDraw == 3 ? goldSize.Width : toDraw == 2 ? silverSize.Width : copperSize.Width;
                         canvas.DrawImage(icon,
@@ -111,7 +117,10 @@ namespace Nekres.Stream_Out
 
         public static async Task GenerateKarmaImage(string filePath, int karma, bool overwrite = true)
         {
-            if (!overwrite && File.Exists(filePath)) return;
+            if (!overwrite && File.Exists(filePath)) {
+                return;
+            }
+
             var font = new Font("Arial", 12);
             var karmaStr = karma.ToString("N0", Overlay.CultureInfo());
             var karmaSize = karmaStr.Measure(font);
@@ -124,14 +133,16 @@ namespace Nekres.Stream_Out
                 {
                     canvas.SetHighestQuality();
 
-                    using (var karmaBrush = new SolidBrush(Karma))
+                    using (var karmaBrush = new SolidBrush(Karma)) {
                         canvas.DrawString(karmaStr, font, karmaBrush, 0,
-                            karmaSize.Height / 2 - karmaIcon.Height / 2);
+                                          karmaSize.Height / 2 - karmaIcon.Height / 2);
+                    }
+
                     canvas.DrawImage(karmaIcon,
-                        new Rectangle(karmaSize.Width, height / 2 - karmaIcon.Height / 2,
-                            karmaIcon.Width, karmaIcon.Width),
-                        new Rectangle(0, 0, karmaIcon.Width, karmaIcon.Width),
-                        GraphicsUnit.Pixel);
+                                     new Rectangle(karmaSize.Width, height / 2 - karmaIcon.Height / 2,
+                                                   karmaIcon.Width, karmaIcon.Width),
+                                     new Rectangle(0, 0, karmaIcon.Width, karmaIcon.Width),
+                                     GraphicsUnit.Pixel);
                     canvas.Flush();
                     canvas.Save();
                 }
@@ -144,7 +155,10 @@ namespace Nekres.Stream_Out
 
         public static async Task GeneratePvpTierImage(string filePath, int tier, int maxTiers, bool overwrite = true)
         {
-            if (!overwrite && File.Exists(filePath)) return;
+            if (!overwrite && File.Exists(filePath)) {
+                return;
+            }
+
             var tierIconFilledStream = Instance.ContentsManager.GetFileStream("1495585.png");
             var tierIconFilled = new Bitmap(tierIconFilledStream);
             var tierIconEmptyStream = Instance.ContentsManager.GetFileStream("1495584.png");
@@ -185,6 +199,12 @@ namespace Nekres.Stream_Out
         {
             var nextDay = DateTime.UtcNow.AddDays(1);
             return new DateTime(nextDay.Year, nextDay.Month, nextDay.Day, 2, 0, 0).ToUniversalTime(); // UTC+2
+        }
+
+        public static DateTime GetWeeklyResetTime() {
+            var currTime = DateTime.UtcNow;
+            var nextWeek = currTime.AddDays(((int)DayOfWeek.Monday - (int)currTime.DayOfWeek + 7) % 7);
+            return new DateTime(nextWeek.Year, nextWeek.Month, nextWeek.Day, 2, 0, 0).ToUniversalTime(); // UTC+2
         }
     }
 }
