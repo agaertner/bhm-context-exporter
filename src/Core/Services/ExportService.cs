@@ -15,8 +15,8 @@ namespace Nekres.Stream_Out.Core.Services {
         protected ExportService(SettingCollection settings)
         {
             _prevApiRequestTime  = DateTime.UtcNow;
-            _nextResetTimeDaily  = settings.DefineSetting($"{this.GetType().Name}_nextResetDaily",  DateTime.UtcNow.AddSeconds(1));
-            _nextResetTimeWeekly = settings.DefineSetting($"{this.GetType().Name}_nextResetWeekly", DateTime.UtcNow.AddSeconds(1));
+            _nextResetTimeDaily  = settings.DefineSetting($"{this.GetType().Name}_nextResetDaily",  DateTime.UtcNow.AddSeconds(-1));
+            _nextResetTimeWeekly = settings.DefineSetting($"{this.GetType().Name}_nextResetWeekly", DateTime.UtcNow.AddSeconds(-1));
             _lastResetTimeDaily  = settings.DefineSetting($"{this.GetType().Name}_lastResetDaily",  DateTime.UtcNow);
             _lastResetTimeWeekly = settings.DefineSetting($"{this.GetType().Name}_lastResetWeekly", DateTime.UtcNow);
         }

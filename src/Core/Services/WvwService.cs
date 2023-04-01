@@ -28,10 +28,10 @@ namespace Nekres.Stream_Out.Core.Services {
 
         public WvwService(SettingCollection settings) : base(settings)
         {
-            _nextResetTimeWvW  = settings.DefineSetting($"{this.GetType().Name}_next_reset",        DateTime.UtcNow.AddSeconds(1));
+            _nextResetTimeWvW  = settings.DefineSetting($"{this.GetType().Name}_next_reset",        DateTime.UtcNow.AddSeconds(-1));
             _lastResetTimeWvW  = settings.DefineSetting($"{this.GetType().Name}_last_reset",        DateTime.UtcNow);
-            _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", 0);
-            _killsAtResetMatch = settings.DefineSetting($"{this.GetType().Name}_kills_match_reset", 0);
+            _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", -1);
+            _killsAtResetMatch = settings.DefineSetting($"{this.GetType().Name}_kills_match_reset", -1);
         }
 
         public override async Task Initialize()

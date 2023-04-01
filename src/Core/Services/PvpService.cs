@@ -28,7 +28,7 @@ namespace Nekres.Stream_Out.Core.Services {
         private SettingEntry<int> _killsAtResetDaily;
 
         public PvpService(SettingCollection settings) : base(settings) {
-            _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", 0);
+            _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", -1);
         }
 
         public override async Task Initialize() {
