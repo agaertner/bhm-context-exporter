@@ -28,10 +28,10 @@ namespace Nekres.Stream_Out.Core.Services {
 
         public WvwService(SettingCollection settings) : base(settings)
         {
-            _nextResetTimeWvW  = settings.DefineSetting($"{this.GetType().Name}_next_reset",        DateTime.UtcNow.AddSeconds(-1));
-            _lastResetTimeWvW  = settings.DefineSetting($"{this.GetType().Name}_last_reset",        DateTime.UtcNow);
-            _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", -1);
-            _killsAtResetMatch = settings.DefineSetting($"{this.GetType().Name}_kills_match_reset", -1);
+            _nextResetTimeWvW  = settings.DefineSetting($"{this.GetType().Name}_next_reset", DateTime.UtcNow.AddSeconds(1));
+            _lastResetTimeWvW  = settings.DefineSetting($"{this.GetType().Name}_last_reset", DateTime.UtcNow);
+            _killsAtResetDaily = settings.DefineSetting($"{this.GetType().Name}_kills_daily_reset", 0);
+            _killsAtResetMatch = settings.DefineSetting($"{this.GetType().Name}_kills_match_reset", 0);
         }
 
         public override async Task Initialize()
@@ -78,19 +78,18 @@ namespace Nekres.Stream_Out.Core.Services {
             return realmAvenger?.Current ?? -1;
         }
 
-        private async Task<bool> ResetWorldVersusWorld()
-        {
-            if (_lastResetTimeWvW.Value < _nextResetTimeWvW.Value) {
-                return true;
+        private async Task<bool> ResetWorldVersusWorld() {
+            if (_lastResetTimeWvW.Value < _nextResetTimeWvW.Value && DateTime.UtcNow > _nextResetTimeWvW.Value) {
+                var totalKills = await RequestTotalKillsForWvW();
+
+                if (totalKills < 0) {
+                    return false;
+                }
+
+                _killsAtResetDaily.Value = totalKills;
+                _killsAtResetMatch.Value = totalKills;
+                _lastResetTimeWvW.Value  = DateTime.UtcNow;
             }
-            
-            var totalKills = await RequestTotalKillsForWvW();
-            if (totalKills < 0) {
-                return false;
-            }
-            _killsAtResetDaily.Value = totalKills;
-            _killsAtResetMatch.Value = totalKills;
-            _lastResetTimeWvW.Value = DateTime.UtcNow;
             return true;
         }
 
@@ -102,7 +101,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return false;
             }
 
-            _nextResetTimeWvW.Value = wvwWorldMatch.EndTime.UtcDateTime;
+            _nextResetTimeWvW.Value = wvwWorldMatch.EndTime.UtcDateTime.AddMinutes(5);
             return true;
         }
 

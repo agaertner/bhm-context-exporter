@@ -15,8 +15,8 @@ namespace Nekres.Stream_Out.Core.Services {
         protected ExportService(SettingCollection settings)
         {
             _prevApiRequestTime  = DateTime.UtcNow;
-            _nextResetTimeDaily  = settings.DefineSetting($"{this.GetType().Name}_nextResetDaily",  DateTime.UtcNow.AddSeconds(-1));
-            _nextResetTimeWeekly = settings.DefineSetting($"{this.GetType().Name}_nextResetWeekly", DateTime.UtcNow.AddSeconds(-1));
+            _nextResetTimeDaily  = settings.DefineSetting($"{this.GetType().Name}_nextResetDaily",  DateTime.UtcNow.AddSeconds(1));
+            _nextResetTimeWeekly = settings.DefineSetting($"{this.GetType().Name}_nextResetWeekly", DateTime.UtcNow.AddSeconds(1));
             _lastResetTimeDaily  = settings.DefineSetting($"{this.GetType().Name}_lastResetDaily",  DateTime.UtcNow);
             _lastResetTimeWeekly = settings.DefineSetting($"{this.GetType().Name}_lastResetWeekly", DateTime.UtcNow);
         }
@@ -36,31 +36,26 @@ namespace Nekres.Stream_Out.Core.Services {
 
         private async Task<bool> DoResetDaily()
         {
-            if (_lastResetTimeDaily.Value < _nextResetTimeDaily.Value) {
-                return true;
+            if (_lastResetTimeDaily.Value < _nextResetTimeDaily.Value && DateTime.UtcNow > _nextResetTimeDaily.Value) {
+                if (!await this.ResetDaily()) {
+                    return false;
+                }
+
+                _lastResetTimeDaily.Value = DateTime.UtcNow;
+                _nextResetTimeDaily.Value = Gw2Util.GetDailyResetTime();
             }
-
-
-            if (!await this.ResetDaily()) {
-                return false;
-            }
-
-            _lastResetTimeDaily.Value = DateTime.UtcNow;
-            _nextResetTimeDaily.Value = Gw2Util.GetDailyResetTime();
             return true;
         }
 
         private async Task<bool> DoResetWeekly() {
-            if (_lastResetTimeWeekly.Value < _nextResetTimeWeekly.Value) {
-                return true;
-            }
+            if (_lastResetTimeWeekly.Value < _nextResetTimeWeekly.Value && DateTime.UtcNow > _nextResetTimeWeekly.Value) {
+                if (!await this.ResetWeekly()) {
+                    return false;
+                }
 
-            if (!await this.ResetWeekly()) {
-                return false;
+                _lastResetTimeWeekly.Value = DateTime.UtcNow;
+                _nextResetTimeWeekly.Value = Gw2Util.GetWeeklyResetTime();
             }
-
-            _lastResetTimeWeekly.Value = DateTime.UtcNow;
-            _nextResetTimeWeekly.Value = Gw2Util.GetWeeklyResetTime();
             return true;
         }
 
