@@ -48,11 +48,11 @@ namespace Nekres.Stream_Out.Core.Services {
 
             var location = map.Name;
             // Some instanced maps consist of just a single sector and hide their display name in it.
-            if (map.Name.Equals(map.RegionName, StringComparison.InvariantCultureIgnoreCase))
-            {
-                var defaultSector = (await RequestSectors(map.ContinentId, map.DefaultFloor, map.RegionId, map.Id)).FirstOrDefault();
-                if (defaultSector != null && !string.IsNullOrEmpty(defaultSector.Name)) { 
-                    location = defaultSector.Name.Replace("<br>", " ");
+            if (map.Name.Equals(map.RegionName, StringComparison.InvariantCultureIgnoreCase)) {
+                var sectors = await RequestSectors(map.ContinentId, map.DefaultFloor, map.RegionId, map.Id);
+                var defaultSector = sectors?.FirstOrDefault();
+                if (defaultSector != null && !string.IsNullOrEmpty(defaultSector.Name)) {
+                    location = defaultSector.Name.Replace("<br>", " "); // They use <br> here and not </br>
                 }
             }
             await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{MAP_NAME}", location);
