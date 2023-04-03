@@ -36,7 +36,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            var charCore = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Characters[Gw2Mumble.PlayerCharacter.Name].Core.GetAsync()).Unwrap();
+            var charCore = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Characters[Gw2Mumble.PlayerCharacter.Name].Core.GetAsync());
             var guildId  = charCore?.Guild ?? Guid.Empty;
 
             if (guildId.Equals(Guid.Empty))
@@ -68,8 +68,8 @@ namespace Nekres.Stream_Out.Core.Services {
                     return;
                 }
 
-                var bg = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Emblem.Backgrounds.GetAsync(emblem.Background.Id)).Unwrap();
-                var fg = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Emblem.Foregrounds.GetAsync(emblem.Foreground.Id)).Unwrap();
+                var bg = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Emblem.Backgrounds.GetAsync(emblem.Background.Id));
+                var fg = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Emblem.Foregrounds.GetAsync(emblem.Foreground.Id));
 
                 var layersCombined = new List<Gw2Sharp.WebApi.RenderUrl>();
                 if (bg != null) {
@@ -99,7 +99,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 // var colors = await Gw2ApiManager.Gw2ApiClient.V2.Colors.ManyAsync(colorsCombined);
                 var colors = new List<Color>();
                 foreach (var colorId in colorsCombined) {
-                    var color = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Colors.GetAsync(colorId)).Unwrap();
+                    var color = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Colors.GetAsync(colorId));
                     if (color == null) {
                         return;
                     }

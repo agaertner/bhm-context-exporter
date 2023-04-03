@@ -36,7 +36,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            var wallet = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.Wallet.GetAsync()).Unwrap();
+            var wallet = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.Wallet.GetAsync());
 
             if (wallet == null) {
                 return;

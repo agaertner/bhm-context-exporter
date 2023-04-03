@@ -88,7 +88,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            var specialization = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Specializations.GetAsync(e.Value)).Unwrap();
+            var specialization = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Specializations.GetAsync(e.Value));
 
             if (specialization == null) {
                 return;
@@ -104,7 +104,7 @@ namespace Nekres.Stream_Out.Core.Services {
 
             } else {
 
-                var profession = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Professions.GetAsync(Gw2Mumble.PlayerCharacter.Profession)).Unwrap();
+                var profession = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Professions.GetAsync(Gw2Mumble.PlayerCharacter.Profession));
 
                 if (profession == null) {
                     return;
@@ -147,7 +147,7 @@ namespace Nekres.Stream_Out.Core.Services {
             if (!Gw2ApiManager.HasPermissions(new[] { TokenPermission.Account, TokenPermission.Characters })) {
                 return -1;
             }
-            var chars = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Characters.AllAsync()).Unwrap();
+            var chars = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Characters.AllAsync());
             if (chars == null) {
                 return -1;
             }

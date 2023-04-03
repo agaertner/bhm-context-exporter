@@ -48,7 +48,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return -1;
             }
 
-            var achievements = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.Achievements.GetAsync()).Unwrap();
+            var achievements = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.Achievements.GetAsync());
             if (achievements == null) {
                 return -1;
             }
@@ -62,7 +62,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            var seasons = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Pvp.Seasons.AllAsync()).Unwrap();
+            var seasons = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Pvp.Seasons.AllAsync());
 
             if (seasons == null) {
                 return;
@@ -70,7 +70,7 @@ namespace Nekres.Stream_Out.Core.Services {
 
             var season = seasons.OrderByDescending(x => x.End).First();
 
-            var standings = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Pvp.Standings.GetAsync()).Unwrap();
+            var standings = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Pvp.Standings.GetAsync());
 
             var standing = standings?.FirstOrDefault(x => x.SeasonId.Equals(season.Id));
 
@@ -138,7 +138,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            var stats = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Pvp.Stats.GetAsync()).Unwrap();
+            var stats = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Pvp.Stats.GetAsync());
 
             if (stats == null) {
                 return;
