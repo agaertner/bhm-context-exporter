@@ -27,7 +27,7 @@ namespace Nekres.Stream_Out.Core.Services {
         }
 
         private async Task<IEnumerable<ContinentFloorRegionMapSector>> RequestSectors(int continentId, int floor, int regionId, int mapId) {
-            return await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Continents[continentId].Floors[floor].Regions[regionId].Maps[mapId].Sectors.AllAsync()).Unwrap();
+            return await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Continents[continentId].Floors[floor].Regions[regionId].Maps[mapId].Sectors.AllAsync());
         }
 
         private async void OnMapChanged(object o, ValueEventArgs<int> e)
@@ -39,7 +39,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            var map = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Maps.GetAsync(e.Value)).Unwrap();
+            var map = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Maps.GetAsync(e.Value));
             if (map == null) {
                 await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{MAP_NAME}", string.Empty);
                 await FileUtil.WriteAllTextAsync($"{DirectoriesManager.GetFullDirectoryPath("stream_out")}/{MAP_TYPE}", string.Empty);

@@ -53,7 +53,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            var wvwRanks    = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Wvw.Ranks.AllAsync()).Unwrap();
+            var wvwRanks    = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Wvw.Ranks.AllAsync());
             if (wvwRanks == null) {
                 return;
             }
@@ -68,7 +68,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return -1;
             }
 
-            var achievements = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.Achievements.GetAsync()).Unwrap();
+            var achievements = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.Achievements.GetAsync());
 
             if (achievements == null) {
                 return -1;
@@ -80,7 +80,7 @@ namespace Nekres.Stream_Out.Core.Services {
 
         private async Task<bool> ResetWvWMatch(int worldId) {
             if (_lastResetTimeWvW.Value < _nextResetTimeWvW.Value && DateTime.UtcNow > _nextResetTimeWvW.Value) {
-                var wvwWorldMatch = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Wvw.Matches.World(worldId).GetAsync()).Unwrap();
+                var wvwWorldMatch = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Wvw.Matches.World(worldId).GetAsync());
 
                 if (wvwWorldMatch == null) {
                     return false;

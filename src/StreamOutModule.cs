@@ -154,7 +154,7 @@ namespace Nekres.Stream_Out {
             if (!Gw2ApiManager.HasPermission(TokenPermission.Account)) {
                 return;
             }
-            this.Account = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.GetAsync()).Unwrap();
+            this.Account = await TaskUtil.RetryAsync(() => Gw2ApiManager.Gw2ApiClient.V2.Account.GetAsync());
         }
 
         protected override async Task LoadAsync()
