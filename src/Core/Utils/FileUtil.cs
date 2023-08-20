@@ -10,69 +10,91 @@ namespace Nekres.Stream_Out
 
         public static async Task WriteAllTextAsync(string filePath, string data, bool overwrite = true)
         {
-            if (string.IsNullOrEmpty(filePath))
+            if (string.IsNullOrEmpty(filePath)) {
                 return;
+            }
 
-            if (!overwrite && File.Exists(filePath))
+            if (!overwrite && File.Exists(filePath)) {
                 return;
+            }
 
             data ??= string.Empty;
 
-            try
-            {
+            try {
                 using var sw = new StreamWriter(filePath);
                 await sw.WriteAsync(data);
-            } catch (ArgumentException aEx) {
-                Logger.Error(aEx.Message);
-            } catch (UnauthorizedAccessException uaEx) {
-                Logger.Error(uaEx.Message);
-            } catch (IOException ioEx) {
-                Logger.Error(ioEx.Message);
+            } catch (Exception e) {
+                switch (e) { 
+                    case DirectoryNotFoundException:
+                        Logger.Info(e, e.Message);
+                        break;
+                    case IOException:
+                        Logger.Info(e, e.Message);
+                        break;
+                    case UnauthorizedAccessException:
+                        Logger.Info(e, e.Message);
+                        break;
+                    default:
+                        Logger.Warn(e, e.Message);
+                        break;
+                }
             }
         }
 
-        public static async Task<bool> DeleteAsync(string filePath)
+        public static async Task<bool> DeleteAsync(string filePath, int retries = 2, int delayMs = 2000, Logger logger = null)
         {
-            return await Task.Run(() => {
-                var timeout = DateTime.UtcNow.AddMilliseconds(10000);
-                while (DateTime.UtcNow < timeout)
-                {
-                    try
-                    {
-                        File.Delete(filePath);
-                        return true;
-                    }
-                    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-                    {
-                        if (DateTime.UtcNow < timeout) continue;
-                        StreamOutModule.Logger.Error(e, e.Message);
-                        break;
-                    }
+            logger ??= Logger.GetLogger(typeof(FileUtil));
+            try {
+                File.Delete(filePath);
+                return true;
+            } catch (Exception e) {
+                if (retries > 0) {
+                    await Task.Delay(delayMs);
+                    return await DeleteAsync(filePath, retries - 1, delayMs, logger);
                 }
+
+                switch (e) {
+                    case IOException:
+                        logger.Info(e, e.Message);
+                        break;
+                    case UnauthorizedAccessException:
+                        logger.Info(e, e.Message);
+                        break;
+                    default:
+                        logger.Warn(e, e.Message);
+                        break;
+                }
+
                 return false;
-            });
+            }
         }
 
-        public static async Task<bool> DeleteDirectoryAsync(string dirPath)
+        public static async Task<bool> DeleteDirectoryAsync(string dirPath, int retries = 2, int delayMs = 2000, Logger logger = null)
         {
-            return await Task.Run(() => {
-                var timeout = DateTime.UtcNow.AddMilliseconds(10000);
-                while (DateTime.UtcNow < timeout)
-                {
-                    try
-                    {
-                        Directory.Delete(dirPath, true);
-                        return true;
-                    }
-                    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-                    {
-                        if (DateTime.UtcNow < timeout) continue;
-                        StreamOutModule.Logger.Error(e, e.Message);
-                        break;
-                    }
+            logger ??= Logger.GetLogger(typeof(FileUtil));
+            try {
+                Directory.Delete(dirPath, true);
+                return true;
+            } catch (Exception e) {
+                if (retries > 0) {
+                    await Task.Delay(delayMs);
+                    return await DeleteDirectoryAsync(dirPath, retries - 1, delayMs, logger);
                 }
+
+                switch (e) {
+                    case IOException:
+                        logger.Info(e, e.Message);
+                        break;
+                    case UnauthorizedAccessException:
+                        logger.Info(e, e.Message);
+                        break;
+                    default:
+                        logger.Error(e, e.Message);
+                        break;
+                }
+
                 return false;
-            });
+            }
         }
     }
 }
