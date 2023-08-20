@@ -203,7 +203,7 @@ namespace Nekres.Stream_Out {
 
         public static DateTime GetWeeklyResetTime() {
             var currTime = DateTime.UtcNow;
-            var nextWeek = currTime.AddDays(((int)DayOfWeek.Monday - (int)currTime.DayOfWeek + 7) % 7);
+            var nextWeek = currTime.AddDays(Math.Abs((int)DayOfWeek.Monday - (int)currTime.DayOfWeek));
             return new DateTime(nextWeek.Year, nextWeek.Month, nextWeek.Day, 2, 0, 0).ToUniversalTime(); // UTC+2
         }
     }

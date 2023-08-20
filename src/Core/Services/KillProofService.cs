@@ -5,6 +5,7 @@ using Blish_HUD.Settings;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Flurl.Http;
 
 namespace Nekres.Stream_Out.Core.Services {
     internal class KillProofService : ExportService
@@ -40,7 +41,7 @@ namespace Nekres.Stream_Out.Core.Services {
                 return;
             }
 
-            await TaskUtil.GetJsonResponse<dynamic>($"{KILLPROOF_API_URL}{account.Name}?lang={GameService.Overlay.UserLocale.Value}").ContinueWith(async task =>
+            await HttpUtil.RetryAsync<dynamic>(() => $"{KILLPROOF_API_URL}{account.Name}?lang={GameService.Overlay.UserLocale.Value}".GetAsync()).ContinueWith(async task =>
             {
                 if (task.IsFaulted || !task.Result.Item1) {
                     return;

@@ -171,20 +171,21 @@
     <Compile Include="Core\Services\WalletService.cs" />
     <Compile Include="Core\Services\WvwService.cs" />
     <Compile Include="Core\Services\ExportService.cs" />
+    <Compile Include="Core\Utils\HttpUtil.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StreamOutModule.cs" />
-    <Compile Include="_Extensions\ContentsManagerExtensions.cs" />
-    <Compile Include="_Utils\Gw2Util.cs" />
-    <Compile Include="_Extensions\BitmapExtensions.cs" />
-    <Compile Include="_Extensions\DateTimeExtensions.cs" />
-    <Compile Include="_Extensions\EnumerableExtensions.cs" />
-    <Compile Include="_Extensions\EnumExtensions.cs" />
-    <Compile Include="_Utils\FileUtil.cs" />
-    <Compile Include="_Extensions\GraphicsExtensions.cs" />
-    <Compile Include="_Extensions\IntegerExtensions.cs" />
-    <Compile Include="_Extensions\OverlayServiceExtensions.cs" />
-    <Compile Include="_Extensions\StringExtensions.cs" />
-    <Compile Include="_Utils\TextureUtil.cs" />
+    <Compile Include="Core\Extensions\ContentsManagerExtensions.cs" />
+    <Compile Include="Core\Utils\Gw2Util.cs" />
+    <Compile Include="Core\Extensions\BitmapExtensions.cs" />
+    <Compile Include="Core\Extensions\DateTimeExtensions.cs" />
+    <Compile Include="Core\Extensions\EnumerableExtensions.cs" />
+    <Compile Include="Core\Extensions\EnumExtensions.cs" />
+    <Compile Include="Core\Utils\FileUtil.cs" />
+    <Compile Include="Core\Extensions\GraphicsExtensions.cs" />
+    <Compile Include="Core\Extensions\IntegerExtensions.cs" />
+    <Compile Include="Core\Extensions\OverlayServiceExtensions.cs" />
+    <Compile Include="Core\Extensions\StringExtensions.cs" />
+    <Compile Include="Core\Utils\TextureUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="AsyncClipboardService, Version=1.7.1.0, Culture=neutral, processorArchitecture=MSIL">

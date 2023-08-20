@@ -1,7 +1,5 @@
 ﻿using Blish_HUD;
 using Blish_HUD.Extended;
-using Blish_HUD.Extended.Core.Views;
-using Blish_HUD.Graphics.UI;
 using Blish_HUD.Modules;
 using Blish_HUD.Modules.Managers;
 using Blish_HUD.Settings;
@@ -107,11 +105,6 @@ namespace Nekres.Stream_Out {
                 () => "Currencies such as coins and karma.");
 
             _selfManagedSettings = settings.AddSubCollection("CachedValues", false, false);
-        }
-
-        public override IView GetSettingsView()
-        {
-            return new SocialsSettingsView(new SocialsSettingsModel(SettingsManager.ModuleSettings, "https://pastebin.com/raw/Kk9DgVmL"));
         }
 
         protected override void Initialize()

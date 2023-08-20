@@ -14,8 +14,8 @@ using static Blish_HUD.GameService;
 namespace Nekres.Stream_Out.Core.Services {
     internal class MapService : ExportService
     {
-        private Gw2ApiManager Gw2ApiManager => StreamOutModule.Instance?.Gw2ApiManager;
-        private DirectoriesManager DirectoriesManager => StreamOutModule.Instance?.DirectoriesManager;
+        private Gw2ApiManager Gw2ApiManager => StreamOutModule.Instance.Gw2ApiManager;
+        private DirectoriesManager DirectoriesManager => StreamOutModule.Instance.DirectoriesManager;
 
         private const string MAP_TYPE = "map_type.txt";
         private const string MAP_NAME = "map_name.txt";
@@ -101,6 +101,7 @@ namespace Nekres.Stream_Out.Core.Services {
 
         public override void Dispose()
         {
+            Gw2Mumble.CurrentMap.MapChanged -= OnMapChanged;
         }
     }
 }
